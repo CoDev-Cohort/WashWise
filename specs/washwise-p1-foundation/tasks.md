@@ -65,14 +65,14 @@ The doc skeletons must exist before any parallel task edits them (R5). The norma
 ## Phase 5: US3 — App skeleton and navigation (P1) [COH-13]
 
 - [x] T036 [P] [US3] [COH-13] Create the QueryClient with defaults: staleTime 30 min, gcTime 24 h, refetchOnWindowFocus true, retry 1 — src/app/queryClient.ts
-- [ ] T037 [P] [US3] [COH-13] Create the `MobileColumn` root layout (`mx-auto w-full max-w-[430px] min-h-dvh` + `<Outlet/>`) — src/components/layout/MobileColumn.tsx
-- [ ] T038 [P] [US3] [COH-13] Create placeholder pages — src/pages/LandingPage.tsx, src/pages/HomePage.tsx
-- [ ] T039 [US3] [COH-13] Create `ErrorFallback` (friendly message, "Try again" reset, "Reload", lucide `RotateCcw` with aria-hidden) and `AppErrorBoundary` (react-error-boundary). Tests check that a thrown child shows the fallback and that reset recovers — src/components/errors/ErrorFallback.tsx, src/components/errors/AppErrorBoundary.tsx, src/components/errors/AppErrorBoundary.test.tsx
-- [ ] T040 [US3] [COH-13] Create the router: `MobileColumn` layout, `/` → LandingPage, `/home` → HomePage, `*` → redirect to `/`, root `errorElement` → ErrorFallback — src/app/router.tsx
-- [ ] T041 [US3] [COH-13] Create AppProviders (QueryClientProvider, AppErrorBoundary, Query Devtools in dev only), wire up `main.tsx`, and remove the scaffold demo `App.tsx` and its test — src/app/AppProviders.tsx, src/main.tsx
-- [ ] T042 [P] [US3] [COH-13] Add the SPA rewrite so deep links such as `/home` load index.html — vercel.json
-- [ ] T043 [US3] [COH-13] Replace the trivial e2e test with a smoke test: `/` and `/home` render their placeholders, an unknown path redirects to `/`, and the column is ≤ 430 px at a 1280 px viewport — e2e/smoke.spec.ts
-- [ ] T044 [US3] [COH-13] Fill in the CLAUDE.md "App structure" owner block (routes, QueryClient defaults, error boundary and how to trigger it in tests, layout wrapper). Run `pnpm docs:check --done 1.3` — CLAUDE.md
+- [x] T037 [P] [US3] [COH-13] Create the `MobileColumn` root layout (`mx-auto w-full max-w-[430px] min-h-dvh` + `<Outlet/>`) — src/components/layout/MobileColumn.tsx
+- [x] T038 [P] [US3] [COH-13] Create placeholder pages — src/pages/LandingPage.tsx, src/pages/HomePage.tsx
+- [x] T039 [US3] [COH-13] Create `ErrorFallback` (friendly message, "Try again" reset, "Reload", lucide `RotateCcw` with aria-hidden) and `AppErrorBoundary` (react-error-boundary). Tests check that a thrown child shows the fallback and that reset recovers — src/components/errors/ErrorFallback.tsx, src/components/errors/AppErrorBoundary.tsx, src/components/errors/AppErrorBoundary.test.tsx
+- [x] T040 [US3] [COH-13] Create the router: `MobileColumn` layout, `/` → LandingPage, `/home` → HomePage, `*` → redirect to `/`, root `errorElement` → ErrorFallback — src/app/router.tsx
+- [x] T041 [US3] [COH-13] Create AppProviders (QueryClientProvider, AppErrorBoundary, Query Devtools in dev only), wire up `main.tsx`, and remove the scaffold demo `App.tsx` and its test — src/app/AppProviders.tsx, src/main.tsx
+- [x] T042 [P] [US3] [COH-13] Add the SPA rewrite so deep links such as `/home` load index.html — vercel.json
+- [x] T043 [US3] [COH-13] Replace the trivial e2e test with a smoke test: `/` and `/home` render their placeholders, an unknown path redirects to `/`, and the column is ≤ 430 px at a 1280 px viewport — e2e/smoke.spec.ts
+- [x] T044 [US3] [COH-13] Fill in the CLAUDE.md "App structure" owner block (routes, QueryClient defaults, error boundary and how to trigger it in tests, layout wrapper). Run `pnpm docs:check --done 1.3` — CLAUDE.md
 
 ## Phase 6: US4 — Shared project documentation (P1) [COH-11]
 

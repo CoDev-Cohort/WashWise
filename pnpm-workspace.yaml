@@ -1,6 +1,8 @@
 allowBuilds:
   esbuild: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - lucide-react@1.60.0
 overrides:
   '@typescript-eslint/project-service': 8.71.2
   '@typescript-eslint/scope-manager': 8.71.2

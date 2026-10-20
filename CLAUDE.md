@@ -30,7 +30,24 @@ Guide for AI coding agents (and humans) working on WashWise. Read this before ch
 
 ## App structure
 
-> TODO (task 1.3)
+```
+main.tsx
+└─ AppProviders            src/app/AppProviders.tsx — AppErrorBoundary › QueryClientProvider (+ devtools in dev)
+   └─ RouterProvider       src/app/router.ts (createBrowserRouter) — routes in src/app/routes.tsx
+      └─ MobileColumn      src/components/layout/MobileColumn.tsx — centered column, max-w 430 px, 26 px gutter
+         ├─ /      → LandingPage   (placeholder; location permission in P2)
+         ├─ /home  → HomePage      (placeholder; sections in P3)
+         └─ *      → redirect to /
+```
+
+- **Routes**: add pages in `src/app/routes.tsx` as children of the `MobileColumn` layout so they inherit the column. `routes` is exported separately from `router` so tests can use `createMemoryRouter(routes, { initialEntries })`.
+- **QueryClient defaults** (`src/app/queryClient.ts`): `staleTime` 30 min, `gcTime` 24 h, `refetchOnWindowFocus`, `retry: 1`. Tests call `createQueryClient()` to get a fresh client.
+- **Errors**: there are two boundaries, and both render `ErrorFallback` (`role="alert"`, "Try again" / "Reload"):
+  - `AppErrorBoundary` catches render errors anywhere. "Try again" re-mounts the tree.
+  - The route `errorElement` (`RouteErrorFallback`) catches errors thrown inside routes.
+
+  To test it, render a component that throws inside `AppErrorBoundary`, or inside a memory router whose layout has `errorElement: <RouteErrorFallback />`. Silence the expected `console.error` with `vi.spyOn`.
+- **Deep links**: `vercel.json` rewrites every path to `index.html` so `/home` works on reload. `vite preview` already does this locally.
 
 <!-- /owner: 1.3 -->
 
