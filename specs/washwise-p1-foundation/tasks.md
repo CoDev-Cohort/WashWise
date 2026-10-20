@@ -76,8 +76,8 @@ The doc skeletons must exist before any parallel task edits them (R5). The norma
 
 ## Phase 6: US4 — Shared project documentation (P1) [COH-11]
 
-- [ ] T045 [US4] [COH-11] Complete the README sections owned by 1.1: About, prerequisites (Node 22, pnpm 10), setup, a full scripts table (including fixtures:record, verdict:report, docs:check), and links to CLAUDE.md, DESIGN.md, INFRASTRUCTURE.md, specs/washwise-p1-foundation/spec.md and specs/washwise-p1-foundation/plan.md — README.md
-- [ ] T046 [US4] [COH-11] Complete the CLAUDE.md sections owned by 1.1: commands, folder layout, conventions (strict TS, `@/` imports, tokens only, no React in verdict), testing rules, product rules (thresholds only in config.ts; no city search; device location only), and a PR checklist (`docs:check --done <task>`, lint, typecheck, test) — CLAUDE.md
+- [x] T045 [US4] [COH-11] Complete the README sections owned by 1.1: About, prerequisites (Node 22, pnpm 10), setup, a full scripts table (including fixtures:record, verdict:report, docs:check), and links to CLAUDE.md, DESIGN.md, INFRASTRUCTURE.md, specs/washwise-p1-foundation/spec.md and specs/washwise-p1-foundation/plan.md — README.md
+- [x] T046 [US4] [COH-11] Complete the CLAUDE.md sections owned by 1.1: commands, folder layout, conventions (strict TS, `@/` imports, tokens only, no React in verdict), testing rules, product rules (thresholds only in config.ts; no city search; device location only), and a PR checklist (`docs:check --done <task>`, lint, typecheck, test) — CLAUDE.md
 
 ## Phase 7: US5 — Visual design language from Figma (P2) [COH-12]
 
