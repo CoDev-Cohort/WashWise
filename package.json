@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "docs:check": "tsx scripts/check-docs.ts",
-    "fixtures:record": "tsx scripts/record-fixtures.ts"
+    "fixtures:record": "tsx scripts/record-fixtures.ts",
+    "verdict:report": "tsx scripts/verdict-report.ts"
   },
   "dependencies": {
     "react": "^19.3.1",

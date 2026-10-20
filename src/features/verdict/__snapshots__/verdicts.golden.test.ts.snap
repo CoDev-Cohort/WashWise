@@ -1,0 +1,186 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`london > other days 1`] = `
+[
+  "2026-10-20  laundry Wait  car Wait",
+  "2026-10-21  laundry Wait  car Wait",
+  "2026-10-22  laundry Wait  car Wait",
+  "2026-10-23  laundry Wait  car Wait",
+  "2026-10-24  laundry Maybe  car Wait",
+  "2026-10-25  laundry Maybe  car Maybe",
+  "2026-10-26  laundry Maybe  car Maybe",
+]
+`;
+
+exports[`london > today at fixed local times 1`] = `
+{
+  "07:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh, heavyRainDay1]",
+    "laundry": "notYet — Better to wait · dries 8.6 h [rainHigh, dryingTooSlow]",
+    "weather": "12.9°C 91% 8.3km/h cloud 100% rain 86%",
+  },
+  "13:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh, heavyRainDay1]",
+    "laundry": "notYet — Better to wait · dries tomorrow [rainHigh, wontDryBeforeDark]",
+    "weather": "12.2°C 90% 13.3km/h cloud 100% rain 100%",
+  },
+  "17:30": {
+    "carWash": "notYet — Rain will undo it [rainHigh, heavyRainDay1]",
+    "laundry": "notYet — Better to wait — tomorrow looks wet (tomorrow) · dries 6.0 h [rainHigh, dryingSlow]",
+    "weather": "11.6°C 95% 2.9km/h cloud 100% rain 76%",
+  },
+  "22:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh, heavyRainDay1]",
+    "laundry": "notYet — Better to wait — tomorrow looks wet (tomorrow) · dries 6.0 h [rainHigh, dryingSlow]",
+    "weather": "10.8°C 90% 14km/h cloud 99% rain 41%",
+  },
+}
+`;
+
+exports[`longyearbyen > other days 1`] = `
+[
+  "2026-10-20  laundry Wait  car Wait",
+  "2026-10-21  laundry Wait  car Wait",
+  "2026-10-22  laundry Wait  car Wait",
+  "2026-10-23  laundry Wait  car Wait",
+  "2026-10-24  laundry Wait  car Maybe",
+  "2026-10-25  laundry Wait  car Wait",
+  "2026-10-26  laundry Wait  car Yes",
+]
+`;
+
+exports[`longyearbyen > today at fixed local times 1`] = `
+{
+  "07:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh]",
+    "laundry": "notYet — Better to wait · dries tomorrow [rainModerate, wontDryBeforeDark]",
+    "weather": "0.1°C 96% 3.7km/h cloud 100% rain 74%",
+  },
+  "13:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh, heavyRainDay1]",
+    "laundry": "notYet — Better to wait — tomorrow looks wet (tomorrow) · dries tomorrow [rainHigh, wontDryBeforeDark]",
+    "weather": "-0.8°C 92% 4.4km/h cloud 99% rain 13%",
+  },
+  "17:30": {
+    "carWash": "notYet — Rain will undo it [rainHigh, heavyRainDay1]",
+    "laundry": "notYet — Better to wait — tomorrow looks wet (tomorrow) · dries tomorrow [rainHigh, wontDryBeforeDark]",
+    "weather": "-2.6°C 96% 6.9km/h cloud 62% rain 0%",
+  },
+  "22:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh, heavyRainDay1]",
+    "laundry": "notYet — Better to wait — tomorrow looks wet (tomorrow) · dries tomorrow [rainHigh, wontDryBeforeDark]",
+    "weather": "-0.8°C 91% 6.8km/h cloud 100% rain 4%",
+  },
+}
+`;
+
+exports[`manila > other days 1`] = `
+[
+  "2026-10-21  laundry Maybe  car Wait",
+  "2026-10-22  laundry Maybe  car Wait",
+  "2026-10-23  laundry Maybe  car Maybe",
+  "2026-10-24  laundry Maybe  car Maybe",
+  "2026-10-25  laundry Yes  car Wait",
+  "2026-10-26  laundry Maybe  car Wait",
+  "2026-10-27  laundry Maybe  car Wait",
+]
+`;
+
+exports[`manila > today at fixed local times 1`] = `
+{
+  "07:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh, heavyRainDay1]",
+    "laundry": "caution — Slow drying day · dries 4.5 h [dryingSlow]",
+    "weather": "28.5°C 77% 5.4km/h cloud 100% rain 0%",
+  },
+  "13:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh, heavyRainDay1]",
+    "laundry": "caution — Dry indoors as backup · dries 3.2 h [rainModerate]",
+    "weather": "33.3°C 53% 12.1km/h cloud 60% rain 11%",
+  },
+  "17:30": {
+    "carWash": "notYet — Rain will undo it [rainHigh, heavyRainDay1]",
+    "laundry": "caution — Tomorrow: slow drying day (tomorrow) · dries 5.8 h [dryingSlow]",
+    "weather": "31.9°C 61% 10.2km/h cloud 100% rain 49%",
+  },
+  "22:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh]",
+    "laundry": "caution — Tomorrow: slow drying day (tomorrow) · dries 5.8 h [dryingSlow]",
+    "weather": "27.8°C 85% 2.3km/h cloud 98% rain 70%",
+  },
+}
+`;
+
+exports[`mcmurdo > other days 1`] = `
+[
+  "2026-10-21  laundry Maybe  car Yes",
+  "2026-10-22  laundry Wait  car Yes",
+  "2026-10-23  laundry Wait  car Yes",
+  "2026-10-24  laundry Wait  car Yes",
+  "2026-10-25  laundry Wait  car Yes",
+  "2026-10-26  laundry Wait  car Yes",
+  "2026-10-27  laundry Wait  car Yes",
+]
+`;
+
+exports[`mcmurdo > today at fixed local times 1`] = `
+{
+  "07:00": {
+    "carWash": "go — Good to go []",
+    "laundry": "caution — Slow drying day · dries 8.0 h [dryingSlow]",
+    "weather": "-12.2°C 60% 18.8km/h cloud 82% rain 0%",
+  },
+  "13:00": {
+    "carWash": "go — Good to go []",
+    "laundry": "caution — Slow drying day · dries 6.1 h [dryingSlow]",
+    "weather": "-10.4°C 58% 8km/h cloud 67% rain 0%",
+  },
+  "17:30": {
+    "carWash": "go — Good to go []",
+    "laundry": "caution — Slow drying day · dries 6.6 h [dryingSlow]",
+    "weather": "-8.5°C 54% 22.4km/h cloud 95% rain 0%",
+  },
+  "22:00": {
+    "carWash": "go — Good to go []",
+    "laundry": "notYet — Better to wait — tomorrow looks wet (tomorrow) · dries 8.7 h [dryingTooSlow]",
+    "weather": "-9.3°C 57% 19.4km/h cloud 96% rain 6%",
+  },
+}
+`;
+
+exports[`phoenix > other days 1`] = `
+[
+  "2026-10-20  laundry Maybe  car Wait",
+  "2026-10-21  laundry Maybe  car Wait",
+  "2026-10-22  laundry Wait  car Wait",
+  "2026-10-23  laundry Yes  car Yes",
+  "2026-10-24  laundry Yes  car Yes",
+  "2026-10-25  laundry Yes  car Yes",
+  "2026-10-26  laundry Yes  car Yes",
+]
+`;
+
+exports[`phoenix > today at fixed local times 1`] = `
+{
+  "07:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh]",
+    "laundry": "caution — Slow drying day · dries 4.1 h [dryingSlow]",
+    "weather": "21.1°C 59% 4.2km/h cloud 95% rain 0%",
+  },
+  "13:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh]",
+    "laundry": "go — Good to go · dries 2.6 h []",
+    "weather": "33°C 31% 9km/h cloud 4% rain 1%",
+  },
+  "17:30": {
+    "carWash": "notYet — Rain will undo it [rainHigh]",
+    "laundry": "caution — Tomorrow: slow drying day (tomorrow) · dries 4.8 h [dryingSlow]",
+    "weather": "32.6°C 29% 8.7km/h cloud 1% rain 2%",
+  },
+  "22:00": {
+    "carWash": "notYet — Rain will undo it [rainHigh]",
+    "laundry": "caution — Tomorrow: slow drying day (tomorrow) · dries 4.8 h [dryingSlow]",
+    "weather": "26.7°C 37% 6.7km/h cloud 100% rain 8%",
+  },
+}
+`;
