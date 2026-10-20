@@ -1,0 +1,10 @@
+dist
+dev-dist
+coverage
+playwright-report
+test-results
+pnpm-lock.yaml
+public/meteocons
+design
+src/features/forecast/__fixtures__/real
+specs
