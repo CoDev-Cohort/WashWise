@@ -25,7 +25,9 @@ export function isPolarDay(day: DailyPoint, cfg: VerdictConfig = VERDICT_CONFIG)
 
 /**
  * Usable daylight for laundry (FR-004d): sunrise to 1 h before sunset; the whole day on a polar day.
- * `null` when the sun doesn't rise, or when less than an hour of daylight leaves no usable time.
+ * `null` when sunrise/sunset is missing, or when there's no usable time (e.g. polar night, where
+ * Open-Meteo reports sunrise == sunset, or under an hour of daylight). `daylightDuration` only
+ * detects polar day.
  */
 export function getUsableDaylight(
   forecast: Forecast,
@@ -34,7 +36,7 @@ export function getUsableDaylight(
 ): Interval | null {
   const day = forecast.daily[index]!
   if (isPolarDay(day, cfg)) return { start: day.start, end: dayEnd(forecast, index) }
-  if (day.daylightDuration <= 0 || day.sunrise == null || day.sunset == null) return null
+  if (day.sunrise == null || day.sunset == null) return null
   const end = day.sunset - cfg.laundry.usableDaylightEndsBeforeSunsetHours * HOUR
   return end > day.sunrise ? { start: day.sunrise, end } : null
 }

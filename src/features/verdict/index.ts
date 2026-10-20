@@ -1,7 +1,6 @@
 export { computeCarWashForDay, computeCarWashVerdict } from './carWash'
 export { VERDICT_CONFIG, type VerdictConfig } from './config'
 export { computeDayVerdicts } from './days'
-export { estimateDrying } from './drying'
 export { CAR_WASH_LABELS, LAUNDRY_LABELS, toOtherDaysLabel } from './labels'
 export { computeLaundryForDay, computeLaundryVerdict } from './laundry'
 export type * from './types'

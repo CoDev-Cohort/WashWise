@@ -41,10 +41,19 @@ export async function fetchForecast(
         status: response.status,
       })
     }
+    // The timeout keeps running while the body streams in, so a body-read failure may be an abort.
     const body: unknown = await response.json().catch((err: unknown) => {
-      throw new ForecastError('invalid', 'The forecast response was not valid JSON.', {
-        cause: err,
-      })
+      if (timeout.signal.reason instanceof TimeoutError) {
+        throw new ForecastError('timeout', 'The forecast took too long to load.', { cause: err })
+      }
+      if (signal?.aborted) throw err
+      if (err instanceof SyntaxError) {
+        throw new ForecastError('invalid', 'The forecast response was not valid JSON.', {
+          cause: err,
+        })
+      }
+      // Anything else (e.g. the connection dropped mid-body) is a network failure.
+      throw new ForecastError('network', 'Could not reach the forecast service.', { cause: err })
     })
     return normalizeForecast(body)
   } finally {

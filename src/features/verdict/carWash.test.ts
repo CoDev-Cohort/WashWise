@@ -32,6 +32,14 @@ describe('carWashRules — FR-004b boundaries', () => {
     expect(carWashRules(0, d1, d2)).toMatchObject({ verdict, subLabel })
   })
 
+  it.each([
+    [0, 0.3, 0.3, ['rainTotal']],
+    [40, 0.3, 0.3, ['rainModerate']],
+    [0, 0.2, 0.5, ['rainDay2']],
+  ] as const)('rain %s%%, %s + %s mm → Caution reasons %j', (pct, d1, d2, reasons) => {
+    expect(carWashRules(pct, d1, d2)).toMatchObject({ verdict: 'caution', reasons })
+  })
+
   it('"Light rain expected today" takes precedence over "Rain likely tomorrow"', () => {
     expect(carWashRules(40, 1, 1).subLabel).toBe('Light rain expected today')
   })

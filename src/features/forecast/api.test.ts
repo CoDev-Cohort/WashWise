@@ -1,5 +1,5 @@
 import { delay, http, HttpResponse, type JsonBodyType } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { server } from '@/test/msw/server'
 import { REAL_FIXTURES } from './__fixtures__/realFixtures'
 import { FORECAST_TIMEOUT_MS, fetchForecast } from './api'
@@ -7,6 +7,18 @@ import { ForecastError } from './errors'
 import { FORECAST_ENDPOINT } from './query'
 
 const manila = REAL_FIXTURES.find((f) => f.meta.place === 'manila')!.response as JsonBodyType
+
+/** A JSON response whose body starts but never finishes streaming. */
+function stalledBody() {
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('{"latitude":'))
+    },
+  })
+  return new HttpResponse(body, {
+    headers: { 'Content-Type': 'application/json', 'Content-Length': '1000' },
+  })
+}
 
 async function expectForecastError(promise: Promise<unknown>, kind: ForecastError['kind']) {
   const err = await promise.catch((e: unknown) => e)
@@ -70,6 +82,24 @@ describe('fetchForecast', () => {
     await expectForecastError(fetchForecast(0, 0), 'network')
   })
 
+  it('reports a connection dropped mid-body as a network failure', async () => {
+    server.use(
+      http.get(FORECAST_ENDPOINT, () => {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"latitude":'))
+            // Error after the headers are out, so it fails the body read rather than fetch().
+            setTimeout(() => controller.error(new Error('terminated')), 10)
+          },
+        })
+        return new HttpResponse(body, {
+          headers: { 'Content-Type': 'application/json', 'Content-Length': '1000' },
+        })
+      }),
+    )
+    await expectForecastError(fetchForecast(0, 0), 'network')
+  })
+
   it('times out when there is no response', async () => {
     server.use(
       http.get(FORECAST_ENDPOINT, async () => {
@@ -80,8 +110,44 @@ describe('fetchForecast', () => {
     await expectForecastError(fetchForecast(0, 0, { timeoutMs: 50 }), 'timeout')
   })
 
-  it('uses a 10 s timeout by default', () => {
-    expect(FORECAST_TIMEOUT_MS).toBe(10_000)
+  it('times out while the body is still streaming', async () => {
+    server.use(http.get(FORECAST_ENDPOINT, () => stalledBody()))
+    await expectForecastError(fetchForecast(0, 0, { timeoutMs: 50 }), 'timeout')
+  })
+
+  it('passes a caller abort during the body read through', async () => {
+    server.use(http.get(FORECAST_ENDPOINT, () => stalledBody()))
+    const controller = new AbortController()
+    const pending = fetchForecast(0, 0, { signal: controller.signal })
+    setTimeout(() => controller.abort(), 50)
+    const err = await pending.catch((e: unknown) => e)
+    expect(err).not.toBeInstanceOf(ForecastError)
+  })
+
+  describe('default timeout', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('uses a 10 s timeout by default', async () => {
+      expect(FORECAST_TIMEOUT_MS).toBe(10_000)
+      server.use(
+        http.get(FORECAST_ENDPOINT, async () => {
+          await delay('infinite')
+          return HttpResponse.json(manila)
+        }),
+      )
+      // Fake only the timer withTimeout uses, so MSW keeps working.
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+      const pending = fetchForecast(0, 0)
+      await vi.advanceTimersByTimeAsync(FORECAST_TIMEOUT_MS - 1)
+      let settled = false
+      void pending.finally(() => (settled = true)).catch(() => undefined)
+      await vi.advanceTimersByTimeAsync(0)
+      expect(settled).toBe(false)
+      await vi.advanceTimersByTimeAsync(1)
+      await expectForecastError(pending, 'timeout')
+    })
   })
 
   it('passes a caller abort through instead of reporting a failure', async () => {

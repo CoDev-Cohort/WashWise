@@ -2,6 +2,32 @@
 
 Guide for AI coding agents (and humans) working on WashWise. Read this before changing code.
 
+## Read First
+
+| File                                   | When                                                                                       |
+| -------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `.agents/skills/`                      | On-demand AI-SDD skills (any agent; not Claude-only)                                       |
+| `specs/ACTIVE_WORKFLOW.md`             | Before any spec/plan/tasks work — points to the active `specs/<slug>/` folder (local only) |
+| `specs/<slug>/`                        | Implementing a feature — its `spec.md`, `plan.md` and `tasks.md` define scope              |
+| [README.md](README.md)                 | Setup, prerequisites, every `pnpm` script, credits                                         |
+| [DESIGN.md](DESIGN.md)                 | Any UI or styling change — Figma source, tokens, typography, icons, dark palette, contrast |
+| [INFRASTRUCTURE.md](INFRASTRUCTURE.md) | Data fetching, caching/timeouts, external APIs, PWA/service worker, hosting, CI            |
+
+Do not implement from chat alone. Spec → plan → tasks → code.
+
+## AI-SDD Lifecycle
+
+1. **Specify** — `create-spec` → `specs/spec.md` (WHAT, not HOW)
+2. **Plan** — `create-plan` → `plan.md` (do not author a REST `api.md`)
+3. **Tasks** — `create-tasks` → `tasks.md`
+4. **Execute** — `execute` (organize `specs/<slug>/`, implement, `run-checks`)
+5. **PR** — `create-pr` (base `dev`, the integration branch — not `main`)
+6. **Review** — `code-review` and/or `code-reviewer`
+
+Skill files: `.agents/skills/`. See that folder’s README for the full pipeline.
+
+New work that is not in the active spec is out of scope until the spec is amended.
+
 ## Overview
 
 WashWise is a mobile-first, client-only web app. It tells people whether today is a good day to **do laundry** or **wash the car**, based on the forecast at their current location. Verdicts are three-state: **Go Wash** (green), **Caution** (amber), **Not yet** (red).
@@ -94,7 +120,7 @@ main.tsx
 ```
 
 - **Routes**: add pages in `src/app/routes.tsx` as children of the `MobileColumn` layout so they inherit the column. `routes` is exported separately from `router` so tests can use `createMemoryRouter(routes, { initialEntries })`.
-- **QueryClient defaults** (`src/app/queryClient.ts`): `staleTime` 30 min, `gcTime` 24 h, `refetchOnWindowFocus`, `retry: 1`. Tests call `createQueryClient()` to get a fresh client.
+- **QueryClient defaults** (`src/app/queryClient.ts`): `staleTime` 30 min, `gcTime` 24 h, `refetchOnWindowFocus`, and `retry` once only for transient failures (`ForecastError` `network` or `http` ≥ 500; never `timeout`, `invalid` or 4xx). Tests call `createQueryClient()` to get a fresh client.
 - **Errors**: there are two boundaries, and both render `ErrorFallback` (`role="alert"`, "Try again" / "Reload"):
   - `AppErrorBoundary` catches render errors anywhere. "Try again" re-mounts the tree.
   - The route `errorElement` (`RouteErrorFallback`) catches errors thrown inside routes.

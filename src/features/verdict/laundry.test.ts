@@ -144,22 +144,26 @@ describe('computeLaundryVerdict — switch to tomorrow (FR-001)', () => {
 })
 
 describe('computeLaundryVerdict — polar (FR-004d)', () => {
-  const night = { sunrise: null, sunset: null, daylightDuration: 0 }
-
-  it('polar night today but sun tomorrow → switches to tomorrow, not forced Not yet', () => {
-    const f = makeForecast({ day: (i) => (i === 0 ? night : undefined) })
-    expect(ok(computeLaundryVerdict(f, at(0, 12)))).toMatchObject({
-      verdict: 'go',
-      forTomorrow: true,
+  // Open-Meteo reports polar night as sunrise == sunset == the day's start; null covers missing data.
+  describe.each([
+    ['sunrise == sunset', { sunrise: 0, sunset: 0, daylightDuration: 0 }],
+    ['no sunrise/sunset', { sunrise: null, sunset: null, daylightDuration: 0 }],
+  ])('polar night (%s)', (_, night) => {
+    it('polar night today but sun tomorrow → switches to tomorrow, not forced Not yet', () => {
+      const f = makeForecast({ day: (i) => (i === 0 ? night : undefined) })
+      expect(ok(computeLaundryVerdict(f, at(0, 12)))).toMatchObject({
+        verdict: 'go',
+        forTomorrow: true,
+      })
     })
-  })
 
-  it('polar night today and tomorrow → Not yet', () => {
-    const f = makeForecast({ day: () => night })
-    expect(ok(computeLaundryVerdict(f, at(0, 12)))).toMatchObject({
-      verdict: 'notYet',
-      reasons: ['noDaylight'],
-      forTomorrow: true,
+    it('polar night today and tomorrow → Not yet', () => {
+      const f = makeForecast({ day: () => night })
+      expect(ok(computeLaundryVerdict(f, at(0, 12)))).toMatchObject({
+        verdict: 'notYet',
+        reasons: ['noDaylight'],
+        forTomorrow: true,
+      })
     })
   })
 
@@ -188,6 +192,28 @@ describe('computeLaundryVerdict — missing data (FR-004c)', () => {
       activity: 'laundry',
       reason: 'missingData',
     })
+  })
+})
+
+describe('computeLaundryVerdict — missing drying inputs (FR-004c)', () => {
+  // From 09:00 the window is 09–15 (6 h) and drying reads 09–11 (~2.5 h): 6 hours checked in all.
+  it('counts missing drying inputs in the drying span toward the 25% limit', () => {
+    const f = makeForecast({
+      hours: (_, t) =>
+        t === at(0, 10)
+          ? { relativeHumidity: null }
+          : t === at(0, 11)
+            ? { cloudCover: null }
+            : undefined,
+    })
+    expect(computeLaundryVerdict(f, at(0, 9)).status).toBe('unavailable')
+  })
+
+  it('still gives a verdict just under the limit', () => {
+    const f = makeForecast({
+      hours: (_, t) => (t === at(0, 10) ? { windSpeed: null } : undefined),
+    })
+    expect(ok(computeLaundryVerdict(f, at(0, 9))).verdict).toBe('go')
   })
 })
 

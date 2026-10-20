@@ -102,14 +102,13 @@ function assessDay(
   )
 
   // FR-004c: the window needs rain chances; the drying span needs drying inputs.
-  const read = new Map<EpochMs, HourlyPoint>()
-  for (const h of [...windowHours, ...hoursRead]) read.set(h.time, h)
-  const windowTimes = new Set(windowHours.map((h) => h.time))
-  const dryingTimes = new Set(hoursRead.map((h) => h.time))
+  // Both lists hold the same forecast hour objects, so Sets dedupe the overlap.
+  const inWindow = new Set(windowHours)
+  const inDrying = new Set(hoursRead)
   const isMissing = (h: HourlyPoint) =>
-    (windowTimes.has(h.time) && h.precipProbability === null) ||
-    (dryingTimes.has(h.time) && !hasDryingInputs(h))
-  if (exceedsMissingRatio([...read.values()], isMissing, cfg)) return unavailable
+    (inWindow.has(h) && h.precipProbability === null) || (inDrying.has(h) && !hasDryingInputs(h))
+  if (exceedsMissingRatio([...new Set([...windowHours, ...hoursRead])], isMissing, cfg))
+    return unavailable
 
   const chances = windowHours.flatMap((h) =>
     h.precipProbability === null ? [] : [h.precipProbability],

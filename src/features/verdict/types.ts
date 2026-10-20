@@ -18,6 +18,8 @@ export type VerdictReason =
   | 'heavyRainDay1'
   | 'rainDay1'
   | 'rainDay2'
+  /** Car wash: the 48 h total reaches the Go limit though neither half does. */
+  | 'rainTotal'
 
 export type VerdictResult =
   | {

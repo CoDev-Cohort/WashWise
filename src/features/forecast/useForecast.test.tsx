@@ -79,6 +79,53 @@ describe('useForecast', () => {
     expect(requests()).toBe(1)
   })
 
+  describe('retries (FR-008a)', () => {
+    function setupFailing(respond: () => Response | Promise<Response>) {
+      const client = createQueryClient()
+      // Keep the retry rule but skip the 1 s back-off.
+      client.setDefaultOptions({
+        queries: { ...client.getDefaultOptions().queries, retryDelay: 0 },
+      })
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      )
+      let requests = 0
+      server.use(
+        http.get(FORECAST_ENDPOINT, () => {
+          requests++
+          return respond()
+        }),
+      )
+      return { wrapper, requests: () => requests }
+    }
+
+    it.each([
+      ['a 500', 2, () => new HttpResponse('oops', { status: 500 })],
+      ['a network error', 2, () => HttpResponse.error()],
+      ['a 400', 1, () => HttpResponse.json({ reason: 'bad' }, { status: 400 })],
+      ['an invalid body', 1, () => HttpResponse.text('<html>')],
+    ])('%s → %i request(s)', async (_, expected, respond) => {
+      const { wrapper, requests } = setupFailing(respond)
+      const { result } = renderHook(() => useForecast(14.6, 120.98), { wrapper })
+      await waitFor(() => expect(result.current.isError).toBe(true))
+      expect(requests()).toBe(expected)
+    })
+
+    it('does not retry a timeout', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+      const { wrapper, requests } = setupFailing(async () => {
+        await delay('infinite')
+        return HttpResponse.json(manila)
+      })
+      const { result } = renderHook(() => useForecast(14.6, 120.98), { wrapper })
+      await vi.waitFor(() => expect(requests()).toBe(1))
+      await vi.advanceTimersByTimeAsync(10_000)
+      await vi.waitFor(() => expect(result.current.error).toMatchObject({ kind: 'timeout' }))
+      await vi.advanceTimersByTimeAsync(10_000)
+      expect(requests()).toBe(1)
+    })
+  })
+
   it('uses a stable rounded key', () => {
     expect(forecastKey(14.5995, 120.9842)).toEqual(['forecast', 14.6, 120.98])
   })

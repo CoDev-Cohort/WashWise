@@ -39,6 +39,8 @@ export function carWashRules(
   const reasons: VerdictReason[] = []
   if (rainMaxPct >= goBelowPct) reasons.push('rainModerate')
   if (day2Mm >= cautionMinMm) reasons.push('rainDay2')
+  // Every Caution carries a reason: here only the Go total failed (e.g. 0.3 + 0.3 mm).
+  if (reasons.length === 0 && roundMm(day1Mm + day2Mm) >= goMaxTotalMm) reasons.push('rainTotal')
   return { verdict: 'caution', subLabel: CAR_WASH_LABELS.cautionTomorrow, reasons }
 }
 

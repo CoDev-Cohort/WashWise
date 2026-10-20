@@ -25,6 +25,16 @@ describe('getUsableDaylight', () => {
     expect(getUsableDaylight(f, 0)).toBeNull()
   })
 
+  it('is null on a polar night as Open-Meteo reports it (sunrise == sunset)', () => {
+    const f = makeForecast({ day: () => ({ sunrise: 0, sunset: 0, daylightDuration: 0 }) })
+    expect(getUsableDaylight(f, 0)).toBeNull()
+  })
+
+  it('uses sunrise and sunset when the daylight duration is missing (0)', () => {
+    const f = makeForecast({ day: () => ({ daylightDuration: 0 }) })
+    expect(getUsableDaylight(f, 0)).toEqual({ start: at(0, 6), end: at(0, 17) })
+  })
+
   it('is null when under an hour of daylight leaves no usable time', () => {
     const f = makeForecast({ day: () => ({ sunrise: 12, sunset: 12.75 }) })
     expect(getUsableDaylight(f, 0)).toBeNull()

@@ -5,7 +5,7 @@
  *   pnpm verdict:report --gate   # also exit 1 if a gate fails
  */
 import { pathToFileURL } from 'node:url'
-import { REAL_FIXTURES } from '../src/features/forecast/__fixtures__/realFixtures'
+import { POLAR_PLACES, REAL_FIXTURES } from '../src/features/forecast/__fixtures__/realFixtures'
 import { normalizeForecast } from '../src/features/forecast/normalize'
 import type { Forecast } from '../src/features/forecast/types'
 import {
@@ -16,7 +16,7 @@ import {
 import type { VerdictResult } from '../src/features/verdict'
 
 type Bucket = 'go' | 'caution' | 'notYet' | 'unavailable'
-export type Shares = Record<Bucket, number>
+type Shares = Record<Bucket, number>
 
 const bucket = (r: VerdictResult): Bucket => (r.status === 'ok' ? r.verdict : 'unavailable')
 
@@ -27,7 +27,7 @@ function shares(results: VerdictResult[]): Shares {
   return s
 }
 
-export interface PlaceReport {
+interface PlaceReport {
   place: string
   samples: number
   laundry: Shares
@@ -36,7 +36,7 @@ export interface PlaceReport {
 }
 
 /** Samples every daylight hour of the first 5 days (so the 48 h car-wash window stays inside the forecast). */
-export function reportFor(place: string, forecast: Forecast): PlaceReport {
+function reportFor(place: string, forecast: Forecast): PlaceReport {
   const lastStart = forecast.daily[5]?.start ?? Infinity
   const times = forecast.hourly.filter((h) => h.isDay && h.time < lastStart).map((h) => h.time)
   return {
@@ -50,7 +50,7 @@ export function reportFor(place: string, forecast: Forecast): PlaceReport {
   }
 }
 
-export interface GateResult {
+interface GateResult {
   name: string
   pass: boolean
   detail: string
@@ -58,7 +58,7 @@ export interface GateResult {
 
 const pct = (n: number) => `${Math.round(n * 100)}%`
 
-export function evaluateGates(reports: PlaceReport[]): GateResult[] {
+function evaluateGates(reports: PlaceReport[]): GateResult[] {
   const by = (p: string) => reports.find((r) => r.place === p)!
   const gates: GateResult[] = []
   for (const place of ['london', 'phoenix']) {
@@ -76,7 +76,7 @@ export function evaluateGates(reports: PlaceReport[]): GateResult[] {
     pass: phoenix.laundryGoDays >= 1,
     detail: `${phoenix.laundryGoDays} day(s)`,
   })
-  for (const r of reports.filter((x) => !['longyearbyen', 'mcmurdo'].includes(x.place))) {
+  for (const r of reports.filter((x) => !POLAR_PLACES.has(x.place))) {
     const worst = Math.max(r.laundry.unavailable, r.carWash.unavailable)
     gates.push({ name: `${r.place}: unavailable < 2%`, pass: worst < 0.02, detail: pct(worst) })
   }

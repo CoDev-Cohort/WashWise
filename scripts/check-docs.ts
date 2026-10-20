@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
-export const DOC_FILES = ['README.md', 'CLAUDE.md', 'DESIGN.md', 'INFRASTRUCTURE.md']
+const DOC_FILES = ['README.md', 'CLAUDE.md', 'DESIGN.md', 'INFRASTRUCTURE.md']
 
 export interface Leftover {
   file: string

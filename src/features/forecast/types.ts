@@ -28,7 +28,7 @@ export interface DailyPoint {
   start: EpochMs
   sunrise: EpochMs | null
   sunset: EpochMs | null
-  /** Seconds. 0 = polar night; ≥ 86 340 = polar day. */
+  /** Seconds. ≥ 86 340 = polar day (polar night shows as sunrise == sunset). */
   daylightDuration: number
   weatherCode: number | null
   precipProbabilityMax: number | null

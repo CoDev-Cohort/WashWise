@@ -93,7 +93,7 @@ type DryingEstimate =
 type VerdictReason =
   | 'rainHigh' | 'rainModerate' | 'dryingSlow' | 'dryingTooSlow'
   | 'wontDryBeforeDark' | 'noDaylight'
-  | 'heavyRainDay1' | 'rainDay1' | 'rainDay2';
+  | 'heavyRainDay1' | 'rainDay1' | 'rainDay2' | 'rainTotal';
 
 type VerdictResult =
   | {
@@ -248,7 +248,7 @@ Line height is 100% throughout, and letter spacing is 0. Weights to load: Fraunc
 
 - Normally `[sunrise, sunset − 1 h]`.
 - If `daylightDuration ≥ 86 340` (polar day), it is the whole day `[d.start, next.start)`.
-- If `daylightDuration === 0` (polar night), it is `null`.
+- If sunrise/sunset is missing, or `sunset − 1 h` is not after sunrise, it is `null`. This covers polar night, which Open-Meteo reports as `sunrise == sunset ==` the day's start (`daylightDuration` is only used to detect polar day).
 
 **Laundry today** (FR-001, FR-004g):
 
@@ -294,7 +294,7 @@ Line height is 100% throughout, and letter spacing is 0. Weights to load: Fraunc
 2. Compute `rainMax` over 48 h, `sum1` over day 1 and `sum2` over day 2. Missing values are skipped, subject to FR-004c.
 3. **Not yet** when `rainMax > 60` or `sum1 ≥ 2` → "Rain will undo it".
 4. **Go Wash** when `rainMax < 30` and `sum1 + sum2 < 0.5` → "Good to go".
-5. Everything else is **Caution**. The sub-label is "Light rain expected today" when `0.5 ≤ sum1 < 2` (reason `rainDay1`, takes precedence). Otherwise it is "Rain likely tomorrow", which covers 30–60% and day-2 rain ≥ 0.5 mm (reasons `rainModerate`, `rainDay2`). See Analysis A2.
+5. Everything else is **Caution**. The sub-label is "Light rain expected today" when `0.5 ≤ sum1 < 2` (reason `rainDay1`, takes precedence). Otherwise it is "Rain likely tomorrow", which covers 30–60% and day-2 rain ≥ 0.5 mm (reasons `rainModerate`, `rainDay2`, or `rainTotal` when only the < 0.5 mm Go total failed). See Analysis A2.
 
 **Future days** (FR-004f):
 
@@ -308,7 +308,7 @@ Line height is 100% throughout, and letter spacing is 0. Weights to load: Fraunc
 | `src/main.tsx`                                        | Mount `<AppProviders><RouterProvider/></AppProviders>`; import global CSS and fonts                                                              | 1.1/1.3     |
 | `src/app/router.tsx`                                  | `createBrowserRouter`: `/` → `LandingPage`, `/home` → `HomePage`, `*` → redirect to `/`; root `errorElement` → `ErrorFallback`                   | 1.3         |
 | `src/app/AppProviders.tsx`                            | `QueryClientProvider` + `AppErrorBoundary`                                                                                                       | 1.3         |
-| `src/app/queryClient.ts`                              | `new QueryClient({ defaultOptions: { queries: { staleTime: 30 min, gcTime: 24 h, refetchOnWindowFocus: true, retry: 1 } } })`                    | 1.3/1.4     |
+| `src/app/queryClient.ts`                              | `new QueryClient({ defaultOptions: { queries: { staleTime: 30 min, gcTime: 24 h, refetchOnWindowFocus: true, retry: once for network / 5xx only } } })`                    | 1.3/1.4     |
 | `src/components/layout/MobileColumn.tsx`              | `mx-auto w-full max-w-[430px] min-h-dvh`, used as the root layout via `<Outlet/>`                                                                | 1.3         |
 | `src/components/errors/AppErrorBoundary.tsx`          | `react-error-boundary` wrapper whose reset re-mounts the tree                                                                                    | 1.3         |
 | `src/components/errors/ErrorFallback.tsx`             | Friendly message with "Try again" (reset) and "Reload" buttons; lucide `RotateCcw`                                                               | 1.3         |

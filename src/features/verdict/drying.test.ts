@@ -48,12 +48,20 @@ describe('estimateDrying — mechanics', () => {
     expect(hoursOf(estimate)).toBeCloseTo(1 / rate, 5)
   })
 
-  it('carries the previous rate across a missing hour', () => {
-    const complete = makeForecast()
-    const gap = makeForecast({ hours: (i) => (i === 10 ? { temperature: null } : undefined) })
-    const a = estimateDrying(complete.hourly, at(0, 9), at(0, 18)).estimate
-    const b = estimateDrying(gap.hourly, at(0, 9), at(0, 18)).estimate
-    expect(hoursOf(b)).toBeCloseTo(hoursOf(a), 5)
+  it('carries the earlier rate, not the later one, across a missing hour', () => {
+    const fast = { temperature: 25, relativeHumidity: 50, windSpeed: 15, cloudCover: 0 }
+    const slow = { temperature: 18, relativeHumidity: 70, windSpeed: 5, cloudCover: 75 }
+    // 09:00 fast, 10:00 missing, 11:00 on slow.
+    const f = makeForecast({
+      hours: (i) => (i === 9 ? fast : i === 10 ? { temperature: null } : i > 10 ? slow : undefined),
+    })
+    const before = dryingRate(fast)!
+    const after = dryingRate(slow)!
+    expect(after).toBeLessThan(before / 2) // clearly different rates
+    expect(2 * before).toBeLessThan(1) // still damp when the gap ends
+    const { estimate } = estimateDrying(f.hourly, at(0, 9), at(0, 23))
+    // Two hours at the earlier rate, then the rest at the later one.
+    expect(hoursOf(estimate)).toBeCloseTo(2 + (1 - 2 * before) / after, 5)
   })
 
   it('uses the next known rate when the first hours are missing', () => {

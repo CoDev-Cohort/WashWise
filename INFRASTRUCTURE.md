@@ -47,7 +47,7 @@ GET https://api.open-meteo.com/v1/forecast
 | Fresh for       | 30 min (`staleTime`)                                                                               | [`src/app/queryClient.ts`](src/app/queryClient.ts)             |
 | Refetch         | On the next mount or window focus once stale; previous data stays on screen until new data arrives | TanStack Query defaults                                        |
 | Kept in memory  | 24 h (`gcTime`)                                                                                    | `queryClient.ts`                                               |
-| Retries         | 1                                                                                                  | `queryClient.ts`                                               |
+| Retries         | Once for `network` or `http` ≥ 500; never for `timeout`, `invalid` or 4xx                          | `queryClient.ts`                                               |
 | Request timeout | 10 s, then `ForecastError('timeout')`                                                              | [`src/features/forecast/api.ts`](src/features/forecast/api.ts) |
 
 **How failures surface**: `useForecast` returns `error: ForecastError` with `kind` set to `network`, `timeout`, `http` (with `status`) or `invalid`. The UI reads `kind` to choose a message (P4 designs the final error states). A request cancelled by the caller isn't treated as a failure.
