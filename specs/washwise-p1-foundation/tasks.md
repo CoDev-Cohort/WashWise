@@ -113,7 +113,7 @@ The doc skeletons must exist before any parallel task edits them (R5). The norma
 
 ## Final Phase: Polish & exit checks
 
-- [ ] T067 [US1] [COH-15] Run the distribution gate (before P3 starts) and record the results: car wash Caution or Not yet ≤ 70% for London and Phoenix, laundry Go on ≥ 1 day for Phoenix, unavailable < 2% for non-polar fixtures. If a gate fails, open a spec/config change — docs/verdict-report-2026-10.md
+- [x] T067 [US1] [COH-15] Run the distribution gate (before P3 starts) and record the results: car wash Caution or Not yet ≤ 70% for London and Phoenix, laundry Go on ≥ 1 day for Phoenix, unavailable < 2% for non-polar fixtures. If a gate fails, open a spec/config change — docs/verdict-report-2026-10.md
 - [ ] T068 [US4] [COH-11] Fresh-clone check (SC-005, SC-007): clone into a clean directory, follow the README only, run every listed command, run `pnpm docs:check --phase 1`, and fix any gaps — README.md
 - [ ] T069 [COH-6] Final quality pass: `pnpm lint && pnpm typecheck && pnpm test && pnpm e2e` all green. Confirm every FR has at least one test or verification artifact — specs/washwise-p1-foundation/spec.md
 
