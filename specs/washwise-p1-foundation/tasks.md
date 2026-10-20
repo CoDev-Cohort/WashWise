@@ -81,10 +81,10 @@ The doc skeletons must exist before any parallel task edits them (R5). The norma
 
 ## Phase 7: US5 — Visual design language from Figma (P2) [COH-12]
 
-- [ ] T047 [US5] [COH-12] Transcribe the Figma Token Inventory (plan.md) into `:root` CSS variables as hex values, and derive the amber `--color-caution-*` set (not in Figma) so its text reaches ≥ 4.5:1 on its bg — src/styles/tokens.css
-- [ ] T048 [US5] [COH-12] Set up Tailwind v4: `@import "tailwindcss"`, `@custom-variant dark (&:where(.dark, .dark *))`, and an `@theme inline` mapping of every token, with fallback font stacks. Add the `@tailwindcss/vite` plugin — src/styles/index.css, vite.config.ts
-- [ ] T049 [P] [US5] [COH-12] Self-host the fonts (Fontsource Fraunces variable, Plus Jakarta Sans variable, Barlow) with `font-display: swap`, imported from `main.tsx` — src/styles/fonts.ts, src/main.tsx
-- [ ] T050 [US5] [COH-12] Fill in the DESIGN.md "Tokens" and "Typography" owner blocks (name → value → usage, font loading), and check that the "tokens only" rule (added to CLAUDE.md conventions in T046) is present. Run `pnpm docs:check --done 1.2` — DESIGN.md
+- [x] T047 [US5] [COH-12] Transcribe the Figma Token Inventory (plan.md) into `:root` CSS variables as hex values, and derive the amber `--color-caution-*` set (not in Figma) so its text reaches ≥ 4.5:1 on its bg — src/styles/tokens.css
+- [x] T048 [US5] [COH-12] Set up Tailwind v4: `@import "tailwindcss"`, `@custom-variant dark (&:where(.dark, .dark *))`, and an `@theme inline` mapping of every token, with fallback font stacks. Add the `@tailwindcss/vite` plugin — src/styles/index.css, vite.config.ts
+- [x] T049 [P] [US5] [COH-12] Self-host the fonts (Fontsource Fraunces variable, Plus Jakarta Sans variable, Barlow) with `font-display: swap`, imported from `main.tsx` — src/styles/fonts.ts, src/main.tsx
+- [x] T050 [US5] [COH-12] Fill in the DESIGN.md "Tokens" and "Typography" owner blocks (name → value → usage, font loading), and check that the "tokens only" rule (added to CLAUDE.md conventions in T046) is present. Run `pnpm docs:check --done 1.2` — DESIGN.md
 
 ## Phase 8: US6 — Dark palette (P2) [COH-18]
 

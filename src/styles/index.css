@@ -1,1 +1,142 @@
 @import 'tailwindcss';
+@import './tokens.css';
+
+/* `dark` class on <html> switches the token set (FR-013). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  /* Colors: utilities resolve to the CSS variables, so .dark switches them without per-component changes. */
+  --color-bg: var(--ww-bg);
+  --color-bg-subtle: var(--ww-bg-subtle);
+  --color-surface: var(--ww-surface);
+  --color-surface-muted: var(--ww-surface-muted);
+  --color-border: var(--ww-border);
+  --color-ink: var(--ww-ink);
+  --color-ink-strong: var(--ww-ink-strong);
+  --color-ink-muted: var(--ww-ink-muted);
+  --color-ink-section: var(--ww-ink-section);
+  --color-on-ink: var(--ww-on-ink);
+  --color-accent: var(--ww-accent);
+  --color-accent-alt: var(--ww-accent-alt);
+  --color-rain-1: var(--ww-rain-1);
+  --color-rain-2: var(--ww-rain-2);
+  --color-rain-3: var(--ww-rain-3);
+  --color-rain-4: var(--ww-rain-4);
+  --color-rain-5: var(--ww-rain-5);
+  --color-go-bg: var(--ww-go-bg);
+  --color-go-border: var(--ww-go-border);
+  --color-go-text: var(--ww-go-text);
+  --color-go-pill: var(--ww-go-pill);
+  --color-go-dot: var(--ww-go-dot);
+  --color-caution-bg: var(--ww-caution-bg);
+  --color-caution-border: var(--ww-caution-border);
+  --color-caution-text: var(--ww-caution-text);
+  --color-caution-pill: var(--ww-caution-pill);
+  --color-caution-dot: var(--ww-caution-dot);
+  --color-notyet-bg: var(--ww-notyet-bg);
+  --color-notyet-border: var(--ww-notyet-border);
+  --color-notyet-text: var(--ww-notyet-text);
+  --color-notyet-pill: var(--ww-notyet-pill);
+  --color-notyet-dot: var(--ww-notyet-dot);
+}
+
+@theme {
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Spacing (Tailwind's 4 px scale covers the rest) */
+  --spacing-gutter: 26px;
+  --spacing-chip-gap: 12px;
+  --spacing-card-gap: 18px;
+
+  /* Font families with fallbacks, so text shows immediately (font-display: swap) */
+  --font-serif: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-sans:
+    'Plus Jakarta Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-condensed: 'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Type scale from Figma. Each style has a matching font-<name> and text-<name>. */
+  --font-display: var(--font-serif);
+  --text-display: 40px;
+  --text-display--line-height: 1;
+  --text-display--font-weight: 700;
+
+  --font-title: var(--font-sans);
+  --text-title: 24px;
+  --text-title--line-height: 1.2;
+  --text-title--font-weight: 700;
+
+  --font-verdict: var(--font-sans);
+  --text-verdict: 28px;
+  --text-verdict--line-height: 1;
+  --text-verdict--font-weight: 800;
+
+  --font-date: var(--font-condensed);
+  --text-date: 20px;
+  --text-date--line-height: 1;
+  --text-date--font-weight: 600;
+
+  --font-metric: var(--font-sans);
+  --text-metric: 15px;
+  --text-metric--line-height: 1;
+  --text-metric--font-weight: 700;
+
+  --font-body: var(--font-sans);
+  --text-body: 13.5px;
+  --text-body--line-height: 1.4;
+  --text-body--font-weight: 400;
+
+  --font-status: var(--font-sans);
+  --text-status: 13px;
+  --text-status--line-height: 1;
+  --text-status--font-weight: 700;
+
+  --font-section: var(--font-sans);
+  --text-section: 12px;
+  --text-section--line-height: 1;
+  --text-section--font-weight: 700;
+
+  --font-sublabel: var(--font-condensed);
+  --text-sublabel: 12px;
+  --text-sublabel--line-height: 1;
+  --text-sublabel--font-weight: 700;
+
+  --font-day: var(--font-sans);
+  --text-day: 11.5px;
+  --text-day--line-height: 1;
+  --text-day--font-weight: 700;
+
+  --font-eyebrow: var(--font-condensed);
+  --text-eyebrow: 10px;
+  --text-eyebrow--line-height: 1;
+  --text-eyebrow--font-weight: 600;
+
+  --font-caption: var(--font-condensed);
+  --text-caption: 10px;
+  --text-caption--line-height: 1;
+  --text-caption--font-weight: 500;
+
+  /* Figma 4.5 px, raised for legibility. */
+  --font-pill: var(--font-sans);
+  --text-pill: 10px;
+  --text-pill--line-height: 1;
+  --text-pill--font-weight: 800;
+
+  /* Figma 8 px, raised for legibility. */
+  --font-location: var(--font-condensed);
+  --text-location: 10px;
+  --text-location--line-height: 1;
+  --text-location--font-weight: 500;
+}
+
+@layer base {
+  html {
+    background-color: var(--ww-bg);
+    color: var(--ww-ink);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+}

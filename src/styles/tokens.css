@@ -1,0 +1,55 @@
+/*
+ * WashWise design tokens. Source: design/WashWise.fig → Homepage (393×852).
+ * Colors are hex so src/styles/contrast.test.ts can check them. See DESIGN.md for usage.
+ * Light values live in :root, dark values in .dark (task 1.8).
+ */
+:root {
+  /* Surfaces */
+  --ww-bg: #ffffff;
+  --ww-bg-subtle: #fafaf9;
+  --ww-surface: #ffffff;
+  --ww-surface-muted: #f2f6fb;
+  --ww-border: #d3d3d3;
+
+  /* Text */
+  --ww-ink: #1f335c;
+  --ww-ink-strong: #1b2f55;
+  --ww-ink-muted: #5a6b80;
+  --ww-ink-section: #4e6a8a;
+  --ww-on-ink: #ffffff;
+  /* Figma #3a7bbe (4.41:1) darkened to pass AA for 13 px text. */
+  --ww-accent: #336fad;
+  --ww-accent-alt: #3e86c6;
+
+  /* Rain chance scale, low → high */
+  --ww-rain-1: #9bcfec;
+  --ww-rain-2: #74b5e2;
+  --ww-rain-3: #5fa1d5;
+  --ww-rain-4: #4473a3;
+  --ww-rain-5: #1f335c;
+
+  /* Verdict: Go Wash */
+  --ww-go-bg: #d9f2ec;
+  --ww-go-border: #62d280;
+  --ww-go-text: #07695c;
+  --ww-go-pill: #cbe3de;
+  /* Figma dot #62d280 (1.9:1) darkened to 3:1 for a color-only indicator. */
+  --ww-go-dot: #2f9e4f;
+
+  /* Verdict: Caution (derived; not in Figma) */
+  --ww-caution-bg: #f5ebd3;
+  --ww-caution-border: #f2c46b;
+  --ww-caution-text: #8a5a00;
+  --ww-caution-pill: #e8dcc0;
+  --ww-caution-dot: #b07800;
+
+  /* Verdict: Not yet */
+  --ww-notyet-bg: #f2d9d9;
+  --ww-notyet-border: #f7b0b0;
+  --ww-notyet-text: #9c3d3d;
+  --ww-notyet-pill: #e3cbcb;
+  /* Figma dot #f7b0b0 (1.8:1) darkened to 3:1 for a color-only indicator. */
+  --ww-notyet-dot: #d9534f;
+
+  color-scheme: light;
+}

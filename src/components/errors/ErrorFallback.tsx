@@ -14,7 +14,7 @@ export function ErrorFallback({
   return (
     <div
       role="alert"
-      className="px-gutter mx-auto flex min-h-dvh max-w-[430px] flex-col items-center justify-center gap-4 text-center"
+      className="mx-auto flex min-h-dvh max-w-[430px] flex-col items-center justify-center gap-4 px-gutter text-center"
     >
       <h1 className="font-title text-title text-ink">Something went wrong</h1>
       <p className="font-body text-body text-ink-muted">
@@ -25,7 +25,7 @@ export function ErrorFallback({
           <button
             type="button"
             onClick={onRetry}
-            className="bg-ink font-status text-status text-on-ink inline-flex items-center gap-2 rounded-lg px-4 py-2"
+            className="inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2 font-status text-status text-on-ink"
           >
             <RotateCcw aria-hidden="true" size={16} />
             Try again
@@ -34,7 +34,7 @@ export function ErrorFallback({
         <button
           type="button"
           onClick={onReload}
-          className="border-border font-status text-status text-ink rounded-lg border px-4 py-2"
+          className="rounded-lg border border-border px-4 py-2 font-status text-status text-ink"
         >
           Reload
         </button>
