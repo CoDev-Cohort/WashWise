@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Placeholder WashWise mark (no logo in Figma yet): a W over a water drop, ink navy and white. -->
+  <rect width="512" height="512" rx="112" fill="#1F335C"/>
+  <path d="M256 92c-46 64-92 118-92 172a92 92 0 0 0 184 0c0-54-46-108-92-172z" fill="#9BCFEC"/>
+  <path d="M126 300l42 120 44-96 44 96 44-96 44 96 42-120" fill="none" stroke="#FFFFFF" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

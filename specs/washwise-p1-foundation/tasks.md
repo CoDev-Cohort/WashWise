@@ -104,12 +104,12 @@ The doc skeletons must exist before any parallel task edits them (R5). The norma
 
 ## Phase 10: US8 — Installable app (P3) [COH-17]
 
-- [ ] T061 [US8] [COH-17] Add a placeholder source logo (the WashWise wordmark initial "W" in `--color-ink` on `--color-bg`; there's no logo in Figma, and INFRASTRUCTURE.md notes it's to be replaced) and the `@vite-pwa/assets-generator` config, then generate the 192, 512, maskable-512, apple-touch-180 and favicon icons. Add the `pwa:assets` script — public/logo.svg, pwa-assets.config.ts, public/pwa-192x192.png, public/pwa-512x512.png, public/maskable-icon-512x512.png, public/apple-touch-icon-180x180.png, public/favicon.ico, package.json
-- [ ] T062 [US8] [COH-17] Configure `VitePWA`: manifest (name, short_name, theme/background colors from tokens, display standalone, icons), `selfDestroying: true` until 4.2, `devOptions.enabled: false` — vite.config.ts
-- [ ] T063 [P] [US8] [COH-17] Add the `theme-color` (light and dark media), `apple-touch-icon` and `apple-mobile-web-app-*` metas — index.html
-- [ ] T064 [US8] [COH-17] Add an e2e test that the manifest link is present and that the fetched manifest has its name, icons (192, 512, maskable) and standalone display — e2e/pwa.spec.ts
+- [x] T061 [US8] [COH-17] Add a placeholder source logo (the WashWise wordmark initial "W" in `--color-ink` on `--color-bg`; there's no logo in Figma, and INFRASTRUCTURE.md notes it's to be replaced) and the `@vite-pwa/assets-generator` config, then generate the 192, 512, maskable-512, apple-touch-180 and favicon icons. Add the `pwa:assets` script — public/logo.svg, pwa-assets.config.ts, public/pwa-192x192.png, public/pwa-512x512.png, public/maskable-icon-512x512.png, public/apple-touch-icon-180x180.png, public/favicon.ico, package.json
+- [x] T062 [US8] [COH-17] Configure `VitePWA`: manifest (name, short_name, theme/background colors from tokens, display standalone, icons), `selfDestroying: true` until 4.2, `devOptions.enabled: false` — vite.config.ts
+- [x] T063 [P] [US8] [COH-17] Add the `theme-color` (light and dark media), `apple-touch-icon` and `apple-mobile-web-app-*` metas — index.html
+- [x] T064 [US8] [COH-17] Add an e2e test that the manifest link is present and that the fetched manifest has its name, icons (192, 512, maskable) and standalone display — e2e/pwa.spec.ts
 - [ ] T065 [HUMAN] [US8] [COH-17] Verify manually: Chrome DevTools → Application → Manifest shows no errors, then install on one Android Chrome and one iOS Safari device. Save screenshots and attach them to COH-17 — docs/screenshots/pwa/
-- [ ] T066 [US8] [COH-17] Fill in the INFRASTRUCTURE.md "PWA" owner block (manifest, colors, icons, verification steps, install steps, "offline arrives in 4.2"). Run `pnpm docs:check --done 1.7` — INFRASTRUCTURE.md
+- [x] T066 [US8] [COH-17] Fill in the INFRASTRUCTURE.md "PWA" owner block (manifest, colors, icons, verification steps, install steps, "offline arrives in 4.2"). Run `pnpm docs:check --done 1.7` — INFRASTRUCTURE.md
 
 ## Final Phase: Polish & exit checks
 

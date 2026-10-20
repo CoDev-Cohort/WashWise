@@ -60,7 +60,35 @@ There's no persistent cache yet. Offline support (service worker and runtime cac
 
 ## PWA
 
-> TODO (task 1.7)
+WashWise is installable (Add to Home Screen) through [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app), configured in [`vite.config.ts`](vite.config.ts).
+
+| Manifest field        | Value                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------- |
+| `name` / `short_name` | WashWise                                                                                                |
+| `display`             | `standalone` (portrait)                                                                                 |
+| `start_url` / `scope` | `/`                                                                                                     |
+| `theme_color`         | `#1F335C` (`--ww-ink`)                                                                                  |
+| `background_color`    | `#FFFFFF` (`--ww-bg`)                                                                                   |
+| `icons`               | `pwa-64x64.png`, `pwa-192x192.png`, `pwa-512x512.png`, `maskable-icon-512x512.png` (purpose `maskable`) |
+
+`index.html` adds `theme-color` for both color schemes (light `#1F335C`, dark `#0E1729`), `apple-touch-icon-180x180.png`, and the `apple-mobile-web-app-*` tags iOS uses for home-screen apps.
+
+**Icons** are generated from [`public/logo.svg`](public/logo.svg) with `pnpm pwa:assets` (`@vite-pwa/assets-generator`, minimal-2023 preset, navy background for maskable and Apple icons). ⚠️ The logo is a **placeholder**: Figma has no logo yet. Replace `public/logo.svg` (and `public/favicon.svg`), then re-run `pnpm pwa:assets`.
+
+**Service worker**: until task 4.2, the plugin runs with `selfDestroying: true`. The generated `sw.js` caches nothing, unregisters itself and clears any old caches, so testers never see a stale build. Chrome doesn't need a service worker to install, and iOS never has. **Offline support arrives in task 4.2**, which removes `selfDestroying` and adds precaching and runtime caching for the forecast API.
+
+### Verifying installability
+
+Lighthouse no longer has PWA audits (removed in v12), so check it this way instead:
+
+1. `pnpm build && pnpm preview`, then open the app in Chrome.
+2. DevTools → **Application → Manifest**: no errors or warnings, and every icon renders (including the maskable preview).
+3. `pnpm e2e` includes `e2e/pwa.spec.ts`, which checks that the manifest is linked, has the required fields, and that every icon is served as a PNG.
+4. Install on real devices:
+   - **Android Chrome**: menu → _Install app_ (or the install prompt). It opens standalone with the WashWise icon.
+   - **iOS Safari**: Share → _Add to Home Screen_. It opens standalone with the WashWise icon and title.
+
+Evidence lives in [`docs/screenshots/pwa/`](docs/screenshots/pwa/).
 
 <!-- /owner: 1.7 -->
 
