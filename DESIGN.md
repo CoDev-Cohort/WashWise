@@ -111,7 +111,26 @@ Line height is 1 (as in Figma), except `title` (1.2) and `body` (1.4), which can
 
 ## Icons
 
-> TODO (task 1.6)
+Two icon sets, each with its own job:
+
+| Set                             | For                | How                                                                                                                   |
+| ------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| **Meteocons** (fill style, MIT) | Weather conditions | `<WeatherIcon code isDay variant />` ([`src/components/icons/WeatherIcon.tsx`](src/components/icons/WeatherIcon.tsx)) |
+| **lucide-react**                | UI actions         | `import { Sun, Moon, MapPin, Shirt, Car, Check, RotateCcw } from 'lucide-react'`                                      |
+
+### Weather icons
+
+- **Static vs animated**: cards, pills and the day strip use `variant="static"` (the default). Only the large hero icon uses `variant="animated"`.
+- **Reduced motion**: when the device asks for reduced motion, `WeatherIcon` serves the static version of the same icon automatically (`usePrefersReducedMotion`).
+- **Mapping**: [`src/features/icons/wmoIcons.ts`](src/features/icons/wmoIcons.ts) maps every WMO code Open-Meteo returns (0–99) to a Meteocons name, with day/night variants where they exist and an accessible label ("Light rain", "Thunderstorm"…). Unknown or missing codes show the **`not-available`** fallback ("Weather unavailable").
+- **Day / night** comes from the forecast's `is_day` flag for the hour. When it's unknown, the day icon is used.
+- **Files**: 23 icons in [`public/meteocons/`](public/meteocons/), with `animated/` from Meteocons v2.0.0 and `static/` generated from them. Meteocons ships no static set, so [`scripts/vendor-meteocons.ts`](scripts/vendor-meteocons.ts) strips the SMIL `<animate*>` elements, leaving each icon at its resting frame. To add an icon, add it to the map, then re-run the script against a Meteocons v2.0.0 checkout (`pnpm tsx scripts/vendor-meteocons.ts <weather-icons>/production/fill/all <weather-icons>/LICENSE`).
+
+### Accessibility
+
+- **Meaningful** icons get a label. `WeatherIcon` uses the condition label as `alt`.
+- **Decorative** icons, where the same information is written next to them, are hidden: `<WeatherIcon decorative />` renders `alt="" aria-hidden="true"`.
+- lucide icons are decorative by default: pass `aria-hidden="true"` and put the accessible name on the parent button (`<button aria-label="Switch to dark mode"><Moon aria-hidden="true" /></button>`).
 
 <!-- /owner: 1.6 -->
 

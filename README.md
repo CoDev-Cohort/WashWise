@@ -54,6 +54,9 @@ Work is tracked in Linear (epic COH-5; P1 Foundation is COH-6).
 
 ## Credits
 
-> TODO (task 1.6)
+- Weather icons: [Meteocons](https://github.com/basmilius/weather-icons) by Bas Milius, MIT License ([`public/meteocons/LICENSE`](public/meteocons/LICENSE)). The static versions are generated from the animated originals.
+- UI icons: [Lucide](https://lucide.dev), ISC License.
+- Fonts: [Fraunces](https://fonts.google.com/specimen/Fraunces), [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) and [Barlow](https://fonts.google.com/specimen/Barlow), SIL Open Font License, self-hosted via [Fontsource](https://fontsource.org).
+- Weather data: [Open-Meteo](https://open-meteo.com) (CC BY 4.0).
 
 <!-- /owner: 1.6 -->

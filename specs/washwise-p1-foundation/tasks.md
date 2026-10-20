@@ -95,12 +95,12 @@ The doc skeletons must exist before any parallel task edits them (R5). The norma
 
 ## Phase 9: US7 — Weather and UI icons (P2) [COH-16]
 
-- [ ] T055 [P] [US7] [COH-16] Vendor the needed Meteocons SVGs (about 35, animated and static fill sets) and the MIT LICENSE from the Meteocons GitHub release. If the release has no static set, generate the static SVGs by stripping `<animate*>`/`<animateTransform>` elements and CSS animations from the animated files with a small script, and document this in DESIGN.md — public/meteocons/animated/, public/meteocons/static/, public/meteocons/LICENSE
-- [ ] T056 [P] [US7] [COH-16] Create `WMO_ICONS` for every Open-Meteo WMO code (0, 1, 2, 3, 45, 48, 51–57, 61–67, 71–77, 80–82, 85, 86, 95, 96, 99) with day and night names and labels, plus `FALLBACK_ICON` (not-available) — src/features/icons/wmoIcons.ts
-- [ ] T057 [US7] [COH-16] Implement `getWeatherIcon(code, isDay, variant)` returning `{ src, label }`. Tests check that every code resolves to an existing file, that day/night selection works, that a null `isDay` gives the day icon, and that unknown codes give the fallback — src/features/icons/getWeatherIcon.ts, src/features/icons/getWeatherIcon.test.ts
-- [ ] T058 [P] [US7] [COH-16] Implement the `usePrefersReducedMotion` matchMedia hook, with a test — src/lib/usePrefersReducedMotion.ts, src/lib/usePrefersReducedMotion.test.ts
-- [ ] T059 [US7] [COH-16] Create the `WeatherIcon` component (`<img>`; switches to static under reduced motion; `alt=label`, or `alt="" aria-hidden` when decorative), with RTL tests — src/components/icons/WeatherIcon.tsx, src/components/icons/WeatherIcon.test.tsx
-- [ ] T060 [US7] [COH-16] Fill in the DESIGN.md "Icons" owner block (Meteocons static vs animated, the reduced-motion rule, map location, fallback, lucide conventions) and the README Credits block (Meteocons MIT). Run `pnpm docs:check --done 1.6` — DESIGN.md, README.md
+- [x] T055 [P] [US7] [COH-16] Vendor the needed Meteocons SVGs (about 35, animated and static fill sets) and the MIT LICENSE from the Meteocons GitHub release. If the release has no static set, generate the static SVGs by stripping `<animate*>`/`<animateTransform>` elements and CSS animations from the animated files with a small script, and document this in DESIGN.md — public/meteocons/animated/, public/meteocons/static/, public/meteocons/LICENSE
+- [x] T056 [P] [US7] [COH-16] Create `WMO_ICONS` for every Open-Meteo WMO code (0, 1, 2, 3, 45, 48, 51–57, 61–67, 71–77, 80–82, 85, 86, 95, 96, 99) with day and night names and labels, plus `FALLBACK_ICON` (not-available) — src/features/icons/wmoIcons.ts
+- [x] T057 [US7] [COH-16] Implement `getWeatherIcon(code, isDay, variant)` returning `{ src, label }`. Tests check that every code resolves to an existing file, that day/night selection works, that a null `isDay` gives the day icon, and that unknown codes give the fallback — src/features/icons/getWeatherIcon.ts, src/features/icons/getWeatherIcon.test.ts
+- [x] T058 [P] [US7] [COH-16] Implement the `usePrefersReducedMotion` matchMedia hook, with a test — src/lib/usePrefersReducedMotion.ts, src/lib/usePrefersReducedMotion.test.ts
+- [x] T059 [US7] [COH-16] Create the `WeatherIcon` component (`<img>`; switches to static under reduced motion; `alt=label`, or `alt="" aria-hidden` when decorative), with RTL tests — src/components/icons/WeatherIcon.tsx, src/components/icons/WeatherIcon.test.tsx
+- [x] T060 [US7] [COH-16] Fill in the DESIGN.md "Icons" owner block (Meteocons static vs animated, the reduced-motion rule, map location, fallback, lucide conventions) and the README Credits block (Meteocons MIT). Run `pnpm docs:check --done 1.6` — DESIGN.md, README.md
 
 ## Phase 10: US8 — Installable app (P3) [COH-17]
 
