@@ -2,41 +2,42 @@
 
 Plan R2 gate, run before P3 against the real fixtures recorded 2026-10-20 (`pnpm verdict:report --gate`). Samples are every daylight hour of days 0–4.
 
-| Place | Samples | Laundry go / caution / notYet / unavail | Car wash go / caution / notYet / unavail |
-|---|---|---|---|
-| Manila | 60 | 38% / 60% / 2% / 0% | 0% / 33% / 67% / 0% |
-| London | 50 | 0% / 30% / 70% / 0% | 0% / 0% / 100% / 0% |
-| Phoenix | 55 | 69% / 11% / 20% / 0% | 40% / 0% / 60% / 0% |
-| Longyearbyen | 20 | 0% / 0% / 100% / 0% | 0% / 15% / 85% / 0% |
-| McMurdo | 113 | 0% / 28% / 72% / 0% | 100% / 0% / 0% / 0% |
+| Place        | Samples | Laundry go / caution / notYet / unavail | Car wash go / caution / notYet / unavail |
+| ------------ | ------- | --------------------------------------- | ---------------------------------------- |
+| Manila       | 60      | 38% / 60% / 2% / 0%                     | 0% / 33% / 67% / 0%                      |
+| London       | 50      | 0% / 30% / 70% / 0%                     | 0% / 0% / 100% / 0%                      |
+| Phoenix      | 55      | 69% / 11% / 20% / 0%                    | 40% / 0% / 60% / 0%                      |
+| Longyearbyen | 20      | 0% / 0% / 100% / 0%                     | 0% / 15% / 85% / 0%                      |
+| McMurdo      | 113     | 0% / 28% / 72% / 0%                     | 100% / 0% / 0% / 0%                      |
 
 ## Gates
 
-| Gate | Result |
-|---|---|
-| London: car wash Caution + Not yet ≤ 70% | ✖ **100%** |
-| Phoenix: car wash Caution + Not yet ≤ 70% | ✔ 60% |
-| Phoenix: laundry Go on ≥ 1 day | ✔ 4 days |
-| Manila / London / Phoenix: unavailable < 2% | ✔ 0% |
+| Gate                                        | Result     |
+| ------------------------------------------- | ---------- |
+| London: car wash Caution + Not yet ≤ 70%    | ✖ **100%** |
+| Phoenix: car wash Caution + Not yet ≤ 70%   | ✔ 60%      |
+| Phoenix: laundry Go on ≥ 1 day              | ✔ 4 days   |
+| Manila / London / Phoenix: unavailable < 2% | ✔ 0%       |
 
 ## Reading the London failure
 
 London's recorded week is wet on every day the 48 h car-wash window covers:
 
 | Day | Worst-hour rain chance | Rain total |
-|---|---|---|
-| 0 | 100% | 5.2 mm |
-| 1 | 70% | 7.2 mm |
-| 2 | 82% | 2.5 mm |
-| 3 | 100% | 19.4 mm |
-| 4 | 88% | 3.8 mm |
-| 5 | 72% | 3.0 mm |
-| 6 | 41% | 0 mm |
+| --- | ---------------------- | ---------- |
+| 0   | 100%                   | 5.2 mm     |
+| 1   | 70%                    | 7.2 mm     |
+| 2   | 82%                    | 2.5 mm     |
+| 3   | 100%                   | 19.4 mm    |
+| 4   | 88%                    | 3.8 mm     |
+| 5   | 72%                    | 3.0 mm     |
+| 6   | 41%                    | 0 mm       |
 
 Every sample has a worst hour above 60% or at least 2 mm in its first 24 h, so **"Not yet" is the correct verdict**. The failure reflects this week's weather, not an over-strict threshold. A one-week sample can't separate the two.
 
 **Decision needed (product owner)**, choosing one of:
-1. **Keep thresholds; re-run the gate on a drier London week** (or across several weeks) before P3. *(Recommended: the rules behaved correctly here.)*
+
+1. **Keep thresholds; re-run the gate on a drier London week** (or across several weeks) before P3. _(Recommended: the rules behaved correctly here.)_
 2. Relax car-wash thresholds (spec FR-004b + `config.ts`).
 3. Replace the single-week gate with a seasonal sample.
 

@@ -114,8 +114,8 @@ The doc skeletons must exist before any parallel task edits them (R5). The norma
 ## Final Phase: Polish & exit checks
 
 - [x] T067 [US1] [COH-15] Run the distribution gate (before P3 starts) and record the results: car wash Caution or Not yet ≤ 70% for London and Phoenix, laundry Go on ≥ 1 day for Phoenix, unavailable < 2% for non-polar fixtures. If a gate fails, open a spec/config change — docs/verdict-report-2026-10.md
-- [ ] T068 [US4] [COH-11] Fresh-clone check (SC-005, SC-007): clone into a clean directory, follow the README only, run every listed command, run `pnpm docs:check --phase 1`, and fix any gaps — README.md
-- [ ] T069 [COH-6] Final quality pass: `pnpm lint && pnpm typecheck && pnpm test && pnpm e2e` all green. Confirm every FR has at least one test or verification artifact — specs/washwise-p1-foundation/spec.md
+- [x] T068 [US4] [COH-11] Fresh-clone check (SC-005, SC-007): clone into a clean directory, follow the README only, run every listed command, run `pnpm docs:check --phase 1`, and fix any gaps — README.md
+- [x] T069 [COH-6] Final quality pass: `pnpm lint && pnpm typecheck && pnpm test && pnpm e2e` all green. Confirm every FR has at least one test or verification artifact — specs/washwise-p1-foundation/spec.md
 
 ---
 
@@ -151,3 +151,29 @@ Agent F: US8 PWA                T061 → … → T066   [COH-17]
 ## MVP scope
 
 Phases 1–3 (Setup, Foundational, US1) give a tested, config-driven verdict engine running on real forecast data. That is the product's core value and de-risks the thresholds before any UI is built. Adding Phases 4–5 (US2, US3) gives a runnable app shell that fetches a live forecast.
+
+---
+
+## Implementation Notes (2026-10-21)
+
+Deviations from the plan, and findings made during implementation:
+
+| Area | Plan | Actual | Why |
+|---|---|---|---|
+| Runtime | Node 22, pnpm 10 | **Node 24 LTS, pnpm 11** | The versions installed and current LTS. `.nvmrc` = 24, `packageManager` = pnpm@11.21.0 |
+| Toolchain | React Router 7, Vitest 3, MSW 2, Vite 7 | **React Router 8, Vitest 5, MSW 3, Vite 8** | Latest stable; APIs checked against installed type definitions (MSW 3 renames `onUnhandledRequest` → `onUnhandledFrame`) |
+| TypeScript | 5.x | **6.0** | The Vite template ships TS 7, but typescript-eslint supports only < 6.1 |
+| Supply chain | — | pnpm's `minimumReleaseAge` honored; typescript-eslint internals and lucide-react pinned to releases outside the cutoff instead of adding exclusions | No policy bypasses in `pnpm-workspace.yaml` |
+| E2E port | 4173 | **4319** | 4173 was taken by another local app, which Playwright would have silently reused |
+| Open-Meteo time | DST days of 23/25 h | Open-Meteo applies **one fixed UTC offset per response**, so real days are always 24 h | Verdicts compare absolute times, so this has no effect. DST stays covered by synthetic tests. Documented in INFRASTRUCTURE.md |
+| Polar fixtures | Longyearbyen polar night within the week | Daylight still ≈ 1 h on day 7 | Exercises the "< 2 h → tomorrow" path; full polar night stays synthetic. McMurdo polar day recorded as planned |
+| Meteocons | Vendor static + animated from a release | No static set exists upstream (v2.0.0 is animated only). **Static set generated** by `scripts/vendor-meteocons.ts` (strips SMIL) | Visually checked: every icon rests in a sensible frame |
+| Tokens | Figma values as-is | Accent text darkened (`#3A7BBE` → `#336FAD`), separate darker `-dot` tokens, amber Caution derived, pill/location text raised to 10 px | WCAG AA (FR-014) and legibility; recorded in DESIGN.md |
+| Logo | — | Placeholder `public/logo.svg` | No logo in Figma; documented in INFRASTRUCTURE.md |
+
+**Open items for the product owner** (details in `docs/verdict-report-2026-10.md`):
+1. The distribution gate fails for London car wash (100% Not yet) because of a genuinely wet recorded week. Decide whether to keep the thresholds (recommended) and re-sample, or relax them.
+2. No frost rule: laundry at −12 °C gives "Caution – Slow drying day".
+3. The tomorrow "Not yet" label says "tomorrow looks wet" even when the cause is slow drying.
+
+**Human tasks still open**: T053 (attach theme screenshots from `docs/screenshots/dark-palette/` to COH-18) and T065 (device installs; checklist in `docs/screenshots/pwa/README.md`).
