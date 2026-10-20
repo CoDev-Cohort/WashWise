@@ -38,7 +38,11 @@ Guide for AI coding agents (and humans) working on WashWise. Read this before ch
 
 ## Data access
 
-> TODO (task 1.4)
+- Components get forecast data **only through `useForecast(lat, lon)`** ([`src/features/forecast/useForecast.ts`](src/features/forecast/useForecast.ts)). Never call `fetch` or `fetchForecast` directly from a component.
+- The hook stays disabled until both coordinates are defined, and returns the TanStack Query result (`data: Forecast`, `error: ForecastError`).
+- Cache, refetch and timeout rules are in [INFRASTRUCTURE.md](INFRASTRUCTURE.md#caching--timeouts). Change them in `src/app/queryClient.ts` and `api.ts`, not per call.
+- In tests, mock the network with MSW (`server.use(http.get(FORECAST_ENDPOINT, …))`). Unhandled requests fail the test.
+- Real recorded forecasts are in `src/features/forecast/__fixtures__/real/`. Re-record them with `pnpm fixtures:record` only on purpose, and review the golden snapshot diff afterwards.
 
 <!-- /owner: 1.4 -->
 
