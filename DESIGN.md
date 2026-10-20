@@ -119,6 +119,56 @@ Line height is 1 (as in Figma), except `title` (1.2) and `body` (1.4), which can
 
 ## Dark palette & contrast
 
-> TODO (task 1.8)
+Figma has no dark design, so every token's dark value was **derived** from the light set. Each keeps its role and hue: surfaces become deep navy, ink becomes near-white, and verdict cards become dark tints with light text. The rain scale flips so more rain is lighter (it stays the most prominent bar on a dark background).
+
+**How it switches**: dark values live in a `.dark { … }` block in [`tokens.css`](src/styles/tokens.css). Adding `class="dark"` to `<html>` swaps every `--ww-*` variable, and Tailwind utilities follow automatically (`@custom-variant dark` is also available for the rare one-off `dark:` override). P3 adds the Sun/Moon toggle, defaulting to the system setting and persisted in localStorage.
+
+| Token                                                 | Light                                             | Dark                                              |
+| ----------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- |
+| `bg`                                                  | `#FFFFFF`                                         | `#0E1729`                                         |
+| `bg-subtle`                                           | `#FAFAF9`                                         | `#121C30`                                         |
+| `surface`                                             | `#FFFFFF`                                         | `#16223A`                                         |
+| `surface-muted`                                       | `#F2F6FB`                                         | `#1D2B46`                                         |
+| `border`                                              | `#D3D3D3`                                         | `#34445F`                                         |
+| `ink`                                                 | `#1F335C`                                         | `#E6ECF5`                                         |
+| `ink-strong`                                          | `#1B2F55`                                         | `#F3F6FB`                                         |
+| `ink-muted`                                           | `#5A6B80`                                         | `#A6B3C5`                                         |
+| `ink-section`                                         | `#4E6A8A`                                         | `#9FB5D1`                                         |
+| `on-ink`                                              | `#FFFFFF`                                         | `#0E1729`                                         |
+| `accent`                                              | `#336FAD`                                         | `#84B6E8`                                         |
+| `accent-alt`                                          | `#3E86C6`                                         | `#6FA8DD`                                         |
+| `rain-1` … `rain-5`                                   | `#9BCFEC` `#74B5E2` `#5FA1D5` `#4473A3` `#1F335C` | `#2F5878` `#3F77A3` `#5A97CB` `#8BBDE6` `#CFE5F6` |
+| `go-bg` / `-border` / `-text` / `-pill` / `-dot`      | `#D9F2EC` `#62D280` `#07695C` `#CBE3DE` `#2F9E4F` | `#0F3A33` `#2E8B5A` `#84E3B6` `#17493F` `#4CC77A` |
+| `caution-bg` / `-border` / `-text` / `-pill` / `-dot` | `#F5EBD3` `#F2C46B` `#8A5A00` `#E8DCC0` `#B07800` | `#3B2E12` `#B8892B` `#F2C66F` `#4A3A19` `#E0A73A` |
+| `notyet-bg` / `-border` / `-text` / `-pill` / `-dot`  | `#F2D9D9` `#F7B0B0` `#9C3D3D` `#E3CBCB` `#D9534F` | `#3D1D20` `#B25656` `#F5A8A8` `#4D272A` `#E87474` |
+
+### Measured contrast (WCAG 2.1 AA)
+
+Checked automatically by [`src/styles/contrast.test.ts`](src/styles/contrast.test.ts). The test parses `tokens.css`, so adding or changing a token re-runs these checks. Minimum 4.5:1 for normal text; 3:1 for color-only indicators.
+
+| Pair                                                | Min | Light                | Dark                  |
+| --------------------------------------------------- | --- | -------------------- | --------------------- |
+| `ink` on `bg`                                       | 4.5 | 12.45                | 15.07                 |
+| `ink` on `surface`                                  | 4.5 | 12.45                | 13.35                 |
+| `ink-strong` on `bg`                                | 4.5 | 13.25                | 16.52                 |
+| `ink-strong` on `surface-muted`                     | 4.5 | 12.21                | 13.04                 |
+| `ink-muted` on `bg`                                 | 4.5 | 5.46                 | 8.42                  |
+| `ink-muted` on `surface`                            | 4.5 | 5.46                 | 7.46                  |
+| `ink-section` on `bg`                               | 4.5 | 5.60                 | 8.53                  |
+| `accent` on `bg`                                    | 4.5 | 5.23                 | 8.38                  |
+| `on-ink` on `ink`                                   | 4.5 | 12.45                | 15.07                 |
+| `go-text` on `go-bg`                                | 4.5 | 5.61                 | 8.15                  |
+| `caution-text` on `caution-bg`                      | 4.5 | 5.00                 | 8.25                  |
+| `notyet-text` on `notyet-bg`                        | 4.5 | 4.99                 | 7.92                  |
+| `ink` on `go-bg` / `caution-bg` / `notyet-bg`       | 4.5 | 10.59 / 10.50 / 9.31 | 10.57 / 11.15 / 12.67 |
+| `ink` on `go-pill` / `caution-pill` / `notyet-pill` | 4.5 | 9.24 / 9.15 / 8.11   | 8.58 / 9.26 / 10.79   |
+| `go-dot` on `bg`                                    | 3   | 3.43                 | 8.32                  |
+| `caution-dot` on `bg`                               | 3   | 3.80                 | 8.32                  |
+| `notyet-dot` on `bg`                                | 3   | 3.96                 | 6.12                  |
+| `accent-alt` on `bg`                                | 3   | 3.87                 | 7.09                  |
+
+**Not checked**: `border`, the `-border` tokens and the rain bars against their track. These are decorative boundaries, or always sit next to a text label (the % above each bar), so WCAG 1.4.11 doesn't require 3:1.
+
+Screenshots of both themes: [`docs/screenshots/dark-palette/`](docs/screenshots/dark-palette/).
 
 <!-- /owner: 1.8 -->

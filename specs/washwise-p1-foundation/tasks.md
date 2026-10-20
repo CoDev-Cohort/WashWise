@@ -88,10 +88,10 @@ The doc skeletons must exist before any parallel task edits them (R5). The norma
 
 ## Phase 8: US6 — Dark palette (P2) [COH-18]
 
-- [ ] T051 [US6] [COH-18] Derive a `.dark` value for every token in tokens.css, keeping the green/amber/red verdict colors distinct — src/styles/tokens.css
-- [ ] T052 [US6] [COH-18] Write the contrast test: parse `:root` and `.dark` from tokens.css and assert WCAG AA (4.5:1 text, 3:1 large text and indicators) for a declared list of foreground/background pairs, including the verdict colors, in both themes. Also check in jsdom that adding the `dark` class to `<html>` changes a computed token value — src/styles/contrast.test.ts
+- [x] T051 [US6] [COH-18] Derive a `.dark` value for every token in tokens.css, keeping the green/amber/red verdict colors distinct — src/styles/tokens.css
+- [x] T052 [US6] [COH-18] Write the contrast test: parse `:root` and `.dark` from tokens.css and assert WCAG AA (4.5:1 text, 3:1 large text and indicators) for a declared list of foreground/background pairs, including the verdict colors, in both themes. Also check in jsdom that adding the `dark` class to `<html>` changes a computed token value — src/styles/contrast.test.ts
 - [ ] T053 [HUMAN] [US6] [COH-18] Capture before/after screenshots of both themes and attach them to COH-18 — docs/screenshots/dark-palette/
-- [ ] T054 [US6] [COH-18] Fill in the DESIGN.md "Dark palette & contrast" owner block (light vs dark per token, measured ratios, how the `dark` class works). Run `pnpm docs:check --done 1.8` — DESIGN.md
+- [x] T054 [US6] [COH-18] Fill in the DESIGN.md "Dark palette & contrast" owner block (light vs dark per token, measured ratios, how the `dark` class works). Run `pnpm docs:check --done 1.8` — DESIGN.md
 
 ## Phase 9: US7 — Weather and UI icons (P2) [COH-16]
 

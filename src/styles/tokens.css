@@ -53,3 +53,55 @@
 
   color-scheme: light;
 }
+
+/*
+ * Dark palette (task 1.8). Figma has no dark design: these values are derived from the light set,
+ * keeping hue and role, and are checked for WCAG AA by src/styles/contrast.test.ts.
+ */
+.dark {
+  /* Surfaces */
+  --ww-bg: #0e1729;
+  --ww-bg-subtle: #121c30;
+  --ww-surface: #16223a;
+  --ww-surface-muted: #1d2b46;
+  --ww-border: #34445f;
+
+  /* Text */
+  --ww-ink: #e6ecf5;
+  --ww-ink-strong: #f3f6fb;
+  --ww-ink-muted: #a6b3c5;
+  --ww-ink-section: #9fb5d1;
+  --ww-on-ink: #0e1729;
+  --ww-accent: #84b6e8;
+  --ww-accent-alt: #6fa8dd;
+
+  /* Rain chance scale, low → high (lighter = more rain on dark) */
+  --ww-rain-1: #2f5878;
+  --ww-rain-2: #3f77a3;
+  --ww-rain-3: #5a97cb;
+  --ww-rain-4: #8bbde6;
+  --ww-rain-5: #cfe5f6;
+
+  /* Verdict: Go Wash */
+  --ww-go-bg: #0f3a33;
+  --ww-go-border: #2e8b5a;
+  --ww-go-text: #84e3b6;
+  --ww-go-pill: #17493f;
+  --ww-go-dot: #4cc77a;
+
+  /* Verdict: Caution */
+  --ww-caution-bg: #3b2e12;
+  --ww-caution-border: #b8892b;
+  --ww-caution-text: #f2c66f;
+  --ww-caution-pill: #4a3a19;
+  --ww-caution-dot: #e0a73a;
+
+  /* Verdict: Not yet */
+  --ww-notyet-bg: #3d1d20;
+  --ww-notyet-border: #b25656;
+  --ww-notyet-text: #f5a8a8;
+  --ww-notyet-pill: #4d272a;
+  --ww-notyet-dot: #e87474;
+
+  color-scheme: dark;
+}
