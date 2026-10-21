@@ -113,5 +113,5 @@ Red-team mitigations from the plan are built in:
 
 ## Final Phase: Verification
 
-- [ ] T023 [COH-32] Run `pnpm lint && pnpm typecheck && pnpm format:check && pnpm test && pnpm build && pnpm e2e && pnpm docs:check --done 4.4` locally (Chromium). Then check that CI is green on both legs — package.json scripts, GitHub
+- [x] T023 [COH-32] Run `pnpm lint && pnpm typecheck && pnpm format:check && pnpm test && pnpm build && pnpm e2e && pnpm docs:check --done 4.4` locally (Chromium). Then check that CI is green on both legs — package.json scripts, GitHub
 - [ ] T024 [HUMAN] [COH-32] Add the `flake-check` label to the PR and confirm the repeat-3 run passes (SC-005). A repo admin marks `checks`, `e2e (android-chrome)` and `e2e (ios-safari)` as required on `dev` and `main` (FR-016) — GitHub settings
