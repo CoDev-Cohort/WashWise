@@ -18,9 +18,9 @@ A team member runs the automated accessibility check against every state of the 
 
 **Acceptance Criteria**:
 
-1. **Given** each landing-page state (first visit, asking for location, denied, blocked, unavailable, timed out, unsupported) and the app-wide error screen ("Try again" / "Reload"), **When** the automated check runs in light and dark, **Then** it reports no serious or critical issues.
+1. **Given** each landing-page state (first visit, asking for location, denied, blocked, unavailable, timed out, unsupported), **When** the automated check runs in light and dark, **Then** it reports no serious or critical issues.
 2. **Given** each home-page state (loading, loaded with each verdict, another day selected, first-load error, update-failed banner, offline banner), **When** the automated check runs in light and dark, **Then** it reports no serious or critical issues.
-3. **Given** the update toast or the install prompt is showing, **When** the check runs, **Then** it reports no serious or critical issues.
+3. **Given** the install prompt is showing, **When** the check runs, **Then** it reports no serious or critical issues. The update toast and the app-wide error screen, which can't be reached in the end-to-end run, are checked the same way at component level, with their colors covered by the token contrast checks.
 4. **Given** a change introduces a serious issue, **When** the end-to-end tests run, **Then** they fail and name the rule and the element.
 
 ### Story 2 — Everything works with a keyboard alone (Priority: P1)
@@ -127,4 +127,8 @@ A user with low vision reads every text and indicator in light and dark, zooms t
 - CHK001 [Clarity] Page titles defined: "WashWise — Allow location" / "WashWise — Should you wash?" (Story 2, FR-005).
 - CHK002 [Completeness] Screen readers: VoiceOver on iPhone required; TalkBack if a device is available (SC-004).
 - CHK003 [Measurability] Disabled controls exempt from AA but at least 3:1 (FR-010).
-- CHK004 [Coverage] App-wide error screen added to the audited states (Story 1).
+- CHK004 [Coverage] App-wide error screen added to the audited states (Story 1, criterion 3; scanned at component level).
+
+### Plan analysis 2026-10-21
+
+- Update toast and app-wide error screen: scanned at component level; contrast from token checks (Story 1 criterion 3).
