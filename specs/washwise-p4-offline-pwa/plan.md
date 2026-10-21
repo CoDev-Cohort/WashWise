@@ -1,7 +1,7 @@
 # Implementation Plan: WashWise P4.2 · Offline Mode, Install Prompt and Update Toast
 
 **Date**: 2026-10-21
-**Spec**: [specs/spec.md](spec.md) (Linear COH-30)
+**Spec**: [spec.md](spec.md) (Linear COH-30)
 **Status**: Draft
 
 ## Summary

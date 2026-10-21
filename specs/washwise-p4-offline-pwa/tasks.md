@@ -1,8 +1,8 @@
 # Tasks: WashWise P4.2 · Offline Mode, Install Prompt and Update Toast
 
 **Date**: 2026-10-21
-**Spec**: specs/spec.md
-**Plan**: specs/plan.md
+**Spec**: specs/washwise-p4-offline-pwa/spec.md
+**Plan**: specs/washwise-p4-offline-pwa/plan.md
 **Structure**: By user story (B)
 **Tracker**: Linear COH-30 (task 4.2, parent COH-9)
 
