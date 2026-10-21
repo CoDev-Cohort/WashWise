@@ -29,8 +29,9 @@ None. Open-Meteo and BigDataCloud are called from the browser exactly as today. 
 
 ### Hosting config: `netlify.toml` (new; FR-001 – FR-004, FR-009, FR-013)
 
-- `[build]`: `command = "pnpm build"`, `publish = "dist"`.
-- `[build.environment]`: `NODE_VERSION = "24"`; pnpm comes from `packageManager` through Corepack (Netlify detects `pnpm-lock.yaml`).
+- `[build]`: `command = "corepack enable && pnpm build"`, `publish = "dist"`.
+- `[build.environment]`: `NODE_VERSION = "24"` and `COREPACK_ENABLE_STRICT = "0"`. The build command is `corepack enable && pnpm build`, so pnpm 11 comes from `packageManager` even if the image's default pnpm is older (R2). Fallback, documented, if the image's install step fails: set `PNPM_FLAGS = "--frozen-lockfile"`, or install in the command (`corepack enable && pnpm install --frozen-lockfile && pnpm build`). This is checked on the first deploy (manual step 1).
+- `[[redirects]] from = "/assets/*" to = "/404.html" status = 404`, **before** the fallback. A missing fingerprinted asset (an old page asking for a file the new release removed) must get a real 404, not `index.html` served as JavaScript, which breaks a returning user's page mid-update (R3). `public/404.html` is a tiny static page.
 - `[[redirects]] from = "/*" to = "/index.html" status = 200`. This is the SPA fallback; real files are served first, because Netlify only rewrites when no file matches (`force` stays off).
 - **Cache headers** (carried over from `vercel.json`, 4.2 R1):
   - `/index.html`, `/sw.js`, `/manifest.webmanifest`, `/registerSW.js` if present, and `/` → `Cache-Control: no-cache`;
@@ -54,7 +55,8 @@ A Vitest test that parses `netlify.toml` (with the `smol-toml` dev dependency) a
 - the build command and publish dir match `package.json` / `vite.config.ts`;
 - the SPA rewrite is present and not forced;
 - each required cache and security header exists on the right path;
-- `Permissions-Policy` keeps `geolocation=(self)`.
+- `Permissions-Policy` keeps `geolocation=(self)` (R4);
+- the `/assets/*` 404 rule comes before the SPA fallback (R3).
 
 This catches a config edit that would break location, updates or deep links before anything deploys. It works like `contrast.test.ts` parsing `tokens.css`.
 
@@ -65,14 +67,14 @@ Plain `fetch` against a deployed URL. It fails, naming what is wrong, unless:
 1. the URL is `https://` and the `http://` form redirects (301/308) to it;
 2. `/`, `/home` and `/no-such-page` return 200 HTML containing the app root (`<div id="root">`);
 3. `/sw.js`, `/index.html` and `/manifest.webmanifest` have `Cache-Control: no-cache`, and one `/assets/*.js` from the HTML is `immutable`;
-4. every security header from the list above is present;
+4. every security header from the list above is present; `/manifest.webmanifest` is served as `application/manifest+json` and `/sw.js` as JavaScript, so `nosniff` can't break install or updates (R4); `/assets/does-not-exist.js` returns 404 (R3);
 5. on a preview or branch deploy (`--preview`), `X-Robots-Tag` contains `noindex`; on production (`--production`), it doesn't.
 
 Unit-tested against a stubbed `fetch` (`scripts/check-deploy.test.ts`), as the other `scripts/*.test.ts` are.
 
 ### Workflow: `.github/workflows/deploy-check.yml` (new)
 
-- Trigger: `deployment_status`, when `state == 'success'` and the creator is Netlify. Netlify's GitHub integration creates a GitHub Deployment for each deploy preview and branch deploy, and for production.
+- Trigger: `deployment_status`, when `state == 'success'` and the creator is Netlify, assuming Netlify's GitHub integration creates a GitHub Deployment for each deploy preview, branch deploy and production deploy. **Verify on PR #4 once the site exists (R1).** If no deployments appear, switch the trigger to `status` events from `netlify/<site>/deploy-preview` (and the production context) with `state == 'success'`, using `target_url`.
 - Job: checkout, pnpm, Node 24, `pnpm deploy:check "${{ github.event.deployment_status.environment_url }}" --preview|--production`, choosing the flag from `deployment.environment` (`Production` vs others).
 - `permissions: contents: read, deployments: read`. No secrets.
 - It shows as a check on the PR, next to the Netlify statuses. It is **not** a required check: it runs after deploy, and a rollback, not a blocked merge, is the fix if production fails it.
@@ -122,6 +124,7 @@ Each is a `[HUMAN]` task with its verification:
 
 ```
 netlify.toml                         new
+public/404.html                      new: real 404 for missing assets
 vercel.json                          removed
 scripts/
   check-deploy.ts (+ .test.ts)       new: pnpm deploy:check <url> [--preview|--production]
@@ -145,6 +148,17 @@ The spec has no open `[NEEDS CLARIFICATION]` items. Planning decisions:
 - **Config in `netlify.toml`**, not `_headers`/`_redirects`, so build, redirects and headers live in one reviewed file.
 - **No CSP yet**: it is out of the spec's FR-013 list; it would need the inline script hashed and the two API origins listed. It can be a follow-up.
 - **`deploy-check` is not required**: it runs after a deploy, so it can't block one.
+
+## Known Risks
+
+| Risk                                                                   | Status                                                                                         |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| R1 Netlify doesn't create GitHub Deployments, so `deploy-check` never runs | Mitigated: verified on PR #4; fallback trigger on Netlify commit statuses                    |
+| R2 First Netlify build fails on pnpm 11 / Node 24                      | Mitigated: `NODE_VERSION`, Corepack in the build command, documented fallback; first-deploy check |
+| R3 A missing asset is answered with `index.html` and breaks updating pages | Mitigated: `/assets/*` 404 rule before the SPA fallback; guarded by test and `deploy:check`  |
+| R4 A security header breaks location, install or updates               | Mitigated: config test (`geolocation=(self)`); `deploy:check` checks content types             |
+| R5 Free-tier build minutes run out from preview builds                 | Accepted: builds are ~1 min; an ignore rule for docs-only changes is a follow-up if needed      |
+| No CSP                                                                 | Accepted (out of FR-013); follow-up with a hashed inline theme script                          |
 
 ## Constitution Compliance
 
