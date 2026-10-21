@@ -1,8 +1,8 @@
 # Tasks: WashWise P4.3 · Accessibility Pass in Both Themes
 
 **Date**: 2026-10-21
-**Spec**: specs/spec.md
-**Plan**: specs/plan.md
+**Spec**: specs/washwise-p4-accessibility/spec.md
+**Plan**: specs/washwise-p4-accessibility/plan.md
 **Structure**: By user story (B)
 **Tracker**: Linear COH-31 (task 4.3, parent COH-9)
 

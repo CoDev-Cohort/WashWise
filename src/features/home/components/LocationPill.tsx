@@ -15,7 +15,7 @@ export function LocationPill({ place, refreshing, onRefresh }: LocationPillProps
       disabled={refreshing}
       aria-label={`Update location, ${place}`}
       aria-busy={refreshing}
-      className="inline-flex min-h-8 max-w-full items-center gap-1 rounded-sm bg-surface-muted px-2 font-location text-location text-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="inline-flex min-h-8 max-w-full items-center gap-1 rounded-sm bg-surface-muted px-2 font-location text-location text-ink-strong focus-ring"
     >
       {refreshing ? (
         <LoaderCircle

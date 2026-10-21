@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+import { expectNoSeriousViolations } from '@/test/axe'
 import { InstallPrompt } from './InstallPrompt'
 
 describe('InstallPrompt', () => {
@@ -14,5 +15,10 @@ describe('InstallPrompt', () => {
     expect(onInstall).toHaveBeenCalledTimes(1)
     expect(onDismiss).toHaveBeenCalledTimes(1)
     expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('has no serious accessibility findings (P4.3 FR-001)', async () => {
+    const { container } = render(<InstallPrompt onInstall={vi.fn()} onDismiss={vi.fn()} />)
+    await expectNoSeriousViolations(container)
   })
 })

@@ -97,3 +97,80 @@ export async function holdForecast(page: Page) {
     },
   }
 }
+
+/** What the stubbed browser location does. `pending` never answers ("Finding you…"). */
+export type GeoOutcome =
+  'prompt' | 'pending' | 'denied' | 'blocked' | 'unavailable' | 'timeout' | 'unsupported'
+
+/**
+ * Replaces the browser location APIs before the app loads, so a test can reach every landing state.
+ * `prompt` and `pending` report permission "prompt"; `blocked` reports "denied" (the browser won't ask
+ * again). Errors use the Geolocation API codes: 1 refused, 2 unavailable, 3 timeout.
+ */
+export async function stubGeolocation(page: Page, outcome: GeoOutcome) {
+  await page.addInitScript((outcome: GeoOutcome) => {
+    if (outcome === 'unsupported') {
+      // The app checks `'geolocation' in navigator`, so the property has to go, not just be empty.
+      delete (Navigator.prototype as { geolocation?: unknown }).geolocation
+      return
+    }
+    const codes: Partial<Record<GeoOutcome, number>> = {
+      denied: 1,
+      blocked: 1,
+      unavailable: 2,
+      timeout: 3,
+    }
+    const permission = outcome === 'blocked' ? 'denied' : 'prompt'
+    Object.defineProperty(navigator, 'permissions', {
+      configurable: true,
+      value: {
+        query: () =>
+          Promise.resolve({
+            state: permission,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            onchange: null,
+          }),
+      },
+    })
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: (_ok: PositionCallback, fail?: PositionErrorCallback | null) => {
+          const code = codes[outcome]
+          if (code === undefined) return // pending / prompt: never answers
+          setTimeout(() => fail?.({ code, message: outcome } as GeolocationPositionError), 50)
+        },
+        watchPosition: () => 0,
+        clearWatch: () => {},
+      },
+    })
+  }, outcome)
+}
+
+/** Saves a theme choice before the app loads (the app reads `ww-theme` before first paint). */
+export async function setTheme(page: Page, theme: 'light' | 'dark') {
+  await page.addInitScript((theme) => localStorage.setItem('ww-theme', theme), theme)
+}
+
+/**
+ * Shows the install prompt: a returning user (second visit) on a browser that offers installation.
+ * Call after the page loaded; the app keeps the event from its first script on.
+ */
+export async function offerInstallPrompt(page: Page) {
+  await page.evaluate(() => {
+    const event = Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {
+      prompt: () => Promise.resolve(),
+      userChoice: Promise.resolve({ outcome: 'dismissed' }),
+    })
+    window.dispatchEvent(event)
+  })
+}
+
+/** Seeds a returning user's visit count (the install prompt waits for the second visit). */
+export async function seedVisits(page: Page, visits = 2) {
+  await page.addInitScript((visits) => {
+    localStorage.setItem('ww-visits', String(visits))
+    sessionStorage.setItem('ww-visit-counted', '1')
+  }, visits)
+}

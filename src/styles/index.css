@@ -140,3 +140,42 @@
     -webkit-text-size-adjust: 100%;
   }
 }
+
+/*
+ * Keyboard focus ring for every interactive element (P4.3 FR-004): a 2 px outline 2 px off the
+ * element, only for keyboard focus. `accent` is ≥ 3:1 on bg, surface and surface-muted in both themes;
+ * use `focus-ring-inverse` on `bg-ink` surfaces. Forced colors draw it in the system Highlight color.
+ */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  @media (forced-colors: active) {
+    &:focus-visible {
+      outline-color: Highlight;
+    }
+  }
+}
+
+@utility focus-ring-inverse {
+  &:focus-visible {
+    outline: 2px solid var(--color-on-ink);
+    outline-offset: 2px;
+  }
+  @media (forced-colors: active) {
+    &:focus-visible {
+      outline-color: Highlight;
+    }
+  }
+}
+
+/* Headings focused after a route change (P4.3 FR-005) show no ring: they aren't controls. */
+h1[tabindex='-1']:focus {
+  outline: none;
+}
+
+/* While the bottom prompt is up, focused elements scroll clear of it (P4.3 FR-018). */
+html.has-bottom-prompt {
+  scroll-padding-bottom: 8rem;
+}

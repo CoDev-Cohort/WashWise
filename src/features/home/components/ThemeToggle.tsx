@@ -15,7 +15,7 @@ export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
       type="button"
       onClick={onToggle}
       aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="flex size-8 items-center justify-center rounded-lg text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="flex size-8 items-center justify-center rounded-lg text-ink focus-ring"
     >
       <Icon aria-hidden="true" size={20} />
     </button>

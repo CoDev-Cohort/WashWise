@@ -59,7 +59,9 @@ const PAIRS: [string, string, number][] = [
   ['go-dot', 'bg', 3],
   ['caution-dot', 'bg', 3],
   ['notyet-dot', 'bg', 3],
-  ['accent-alt', 'bg', 3],
+  // Other Days "Maybe" is text, so it needs 4.5 (P4.3: was 3.87 in light)
+  ['accent-alt', 'bg', 4.5],
+  ['accent-alt', 'surface', 4.5],
   // Landing page: error icons sit on the page background (P2 task 2.3)
   ['notyet-text', 'bg', 3],
 ]

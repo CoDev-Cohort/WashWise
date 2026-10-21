@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+import { expectNoSeriousViolations } from '@/test/axe'
 import { AppErrorBoundary } from './AppErrorBoundary'
 import { ErrorFallback } from './ErrorFallback'
 
@@ -34,5 +35,11 @@ describe('ErrorFallback', () => {
     expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Reload' }))
     expect(onReload).toHaveBeenCalledOnce()
+  })
+
+  it('is a main landmark with no serious accessibility findings (P4.3 FR-001, FR-006)', async () => {
+    const { container } = render(<ErrorFallback onRetry={vi.fn()} />)
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('alert'))
+    await expectNoSeriousViolations(container)
   })
 })

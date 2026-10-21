@@ -19,7 +19,7 @@ interface StatusNoticeProps {
 }
 
 const BUTTON =
-  'inline-flex shrink-0 items-center gap-2 rounded-lg font-status text-status focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60'
+  'inline-flex shrink-0 items-center gap-2 rounded-lg font-status text-status focus-ring disabled:opacity-60'
 
 /** The one error pattern: one icon, one label, an optional hint and "Try again" (spec FR-004). */
 export function StatusNotice({

@@ -20,7 +20,7 @@ const LANDING_COPY = {
 } as const
 
 const BUTTON_CLASS =
-  'inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2 font-status text-status text-on-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+  'inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2 font-status text-status text-on-ink focus-ring'
 
 const ERROR_ICON_CLASS = 'text-notyet-text'
 

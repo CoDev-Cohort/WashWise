@@ -112,7 +112,7 @@ describe('HomePage', () => {
     const forecast = normalizeForecast(manila)
     const verdicts = computeDayVerdicts(forecast)
     const dayButtons = await screen.findAllByRole('button', { pressed: false })
-    const target = dayButtons.find((b) => b.getAttribute('aria-label')?.startsWith('SAT'))!
+    const target = dayButtons.find((b) => b.textContent?.startsWith('SAT'))!
     await userEvent.click(target)
 
     expect(target).toHaveAttribute('aria-pressed', 'true')
