@@ -11,6 +11,11 @@ interface StatusNoticeProps {
    * `banner` sits above content that is still shown and is announced politely (`status`).
    */
   variant: 'block' | 'banner'
+  /**
+   * `banner` only: a line that changes while the banner is up (e.g. "Updated 2 h ago"). It sits outside
+   * the live region, so the label and hint are announced once and the changes are not re-announced.
+   */
+  meta?: string
 }
 
 const BUTTON =
@@ -23,6 +28,7 @@ export function StatusNotice({
   onRetry,
   retrying = false,
   variant,
+  meta,
 }: StatusNoticeProps) {
   const button = (
     <button
@@ -46,14 +52,14 @@ export function StatusNotice({
 
   if (variant === 'banner') {
     return (
-      <div
-        role="status"
-        className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2"
-      >
+      <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2">
         <CircleAlert aria-hidden="true" size={20} className="shrink-0 text-ink-muted" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <p className="font-status text-status text-ink">{label}</p>
-          {hint && <p className="font-caption text-caption text-ink-muted">{hint}</p>}
+          <div role="status" className="flex flex-col gap-1">
+            <p className="font-status text-status text-ink">{label}</p>
+            {hint && <p className="font-caption text-caption text-ink-muted">{hint}</p>}
+          </div>
+          {meta && <p className="font-caption text-caption text-ink-muted">{meta}</p>}
         </div>
         {button}
       </div>

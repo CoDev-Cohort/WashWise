@@ -22,6 +22,20 @@ describe('StatusNotice', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  it('banner: the meta line shows but is outside the live region, so updates are not re-announced', () => {
+    render(
+      <StatusNotice
+        variant="banner"
+        label="You’re offline"
+        meta="Updated 2 h ago"
+        onRetry={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('Updated 2 h ago')).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent('You’re offline')
+    expect(screen.getByRole('status')).not.toHaveTextContent('Updated')
+  })
+
   it('hides its icons from assistive technology', () => {
     const { container } = render(<StatusNotice variant="block" label="x" onRetry={vi.fn()} />)
     const icons = container.querySelectorAll('svg')

@@ -1,4 +1,4 @@
-import { QueryClientProvider } from '@tanstack/react-query'
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse, type JsonBodyType } from 'msw'
@@ -8,6 +8,7 @@ import { createQueryClient } from '@/app/queryClient'
 import { REAL_FIXTURES } from '@/features/forecast/__fixtures__/realFixtures'
 import { normalizeForecast } from '@/features/forecast/normalize'
 import { FORECAST_ENDPOINT } from '@/features/forecast/query'
+import { forecastKey } from '@/features/forecast/useForecast'
 import { GEOCODE_ENDPOINT } from '@/features/location/geocode'
 import { RequireLocation } from '@/features/location/RequireLocation'
 import { saveLocation } from '@/features/location/storage'
@@ -27,9 +28,11 @@ const NOW = Date.UTC(2026, 9, 21, 2, 0)
 interface Setup {
   forecast?: () => Response | Promise<Response>
   geocode?: () => Response | Promise<Response>
+  /** A client with forecasts already in it, as restored from the device. */
+  client?: QueryClient
 }
 
-async function setup({ forecast, geocode }: Setup = {}) {
+async function setup({ forecast, geocode, client = createQueryClient() }: Setup = {}) {
   mockMatchMedia({ [DARK_QUERY]: false })
   const geo = mockGeolocation({ permission: 'granted' })
   saveLocation({ lat: 14.6, lon: 120.98 })
@@ -51,7 +54,7 @@ async function setup({ forecast, geocode }: Setup = {}) {
     { initialEntries: ['/home'] },
   )
   render(
-    <QueryClientProvider client={createQueryClient()}>
+    <QueryClientProvider client={client}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   )
@@ -335,9 +338,11 @@ describe('HomePage failed updates (P4 FR-007)', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.getByRole('article', { name: 'Laundry' })).toBeInTheDocument()
 
+    expect(screen.getByText('Updated just now')).toBeInTheDocument()
+
     fail = false
-    await userEvent.click(within(banner).getByRole('button', { name: 'Try again' }))
-    expect(within(banner).getByRole('button', { name: 'Retrying…' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(screen.getByRole('button', { name: 'Retrying…' })).toBeDisabled()
     await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
     expect(screen.getByRole('article', { name: 'Laundry' })).toBeInTheDocument()
   })
@@ -385,5 +390,106 @@ describe('HomePage place name (P4 FR-009)', () => {
     })
     expect(await screen.findByRole('region', { name: 'Other days' })).toBeInTheDocument()
     expect(screen.getByRole('button', PILL('Your location'))).toBeInTheDocument()
+  })
+})
+
+const MINUTE = 60_000
+const HOUR = 60 * MINUTE
+
+/** A client holding the Manila forecast as if restored from the device, received `age` ms ago. */
+function restoredClient(age: number, fetchedAt = NOW - age) {
+  const client = createQueryClient()
+  client.setQueryData(forecastKey(14.6, 120.98), normalizeForecast(manila, fetchedAt), {
+    updatedAt: NOW - age,
+  })
+  return client
+}
+
+/**
+ * What the device reports. TanStack only hears the event once a client is mounted, so offline tests
+ * also make the network fail, as it would for real.
+ */
+function setOnline(online: boolean) {
+  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(online)
+  window.dispatchEvent(new Event(online ? 'online' : 'offline'))
+}
+
+let networkUp = true
+const forecastWhenUp = () => (networkUp ? HttpResponse.json(manila) : HttpResponse.error())
+
+describe('HomePage offline and restored forecasts (P4.2)', () => {
+  afterEach(() => {
+    onlineManager.setOnline(true)
+    networkUp = true
+  })
+
+  it('a restored forecast renders without waiting for the network (SC-005)', async () => {
+    const { requests } = await setup({
+      client: restoredClient(5 * MINUTE),
+      forecast: async () => {
+        await delay('infinite')
+        return HttpResponse.json(manila)
+      },
+    })
+    expect(screen.getByRole('article', { name: 'Laundry' })).toBeInTheDocument()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    // Younger than the 30-minute freshness window: no background request.
+    expect(requests()).toBe(0)
+  })
+
+  it('a restored forecast older than 30 minutes refetches in the background, with no banner', async () => {
+    const { requests } = await setup({
+      client: restoredClient(31 * MINUTE),
+      forecast: async () => {
+        await delay('infinite')
+        return HttpResponse.json(manila)
+      },
+    })
+    expect(screen.getByRole('article', { name: 'Laundry' })).toBeInTheDocument()
+    await waitFor(() => expect(requests()).toBe(1))
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('a forecast received yesterday starts at the real today', async () => {
+    vi.setSystemTime(NOW + 24 * HOUR)
+    setOnline(false)
+    await setup({ client: restoredClient(24 * HOUR), forecast: () => HttpResponse.error() })
+    const today = screen.getByRole('button', { name: /^Today/ })
+    const days = within(screen.getByRole('group', { name: 'Choose a day' })).getAllByRole('button')
+    expect(days[0]).toBe(today)
+    // The fixture's second day (THU 22) is now Today, so no strip button is labelled THU.
+    expect(screen.queryByRole('button', { name: /^THU/ })).not.toBeInTheDocument()
+  })
+
+  it('offline: shows the last forecast with "You’re offline" and its age, which keeps counting', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], now: NOW })
+    setOnline(false)
+    networkUp = false
+    await setup({ client: restoredClient(2 * HOUR), forecast: forecastWhenUp })
+    expect(screen.getByRole('article', { name: 'Laundry' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('You’re offline')
+    expect(screen.getByRole('status')).toHaveTextContent('Showing the last forecast that loaded')
+    expect(screen.getByText('Updated 2 h ago')).toBeInTheDocument()
+
+    await act(async () => vi.advanceTimersByTime(60 * MINUTE))
+    await waitFor(() => expect(screen.getByText('Updated 3 h ago')).toBeInTheDocument())
+  })
+
+  it('the banner goes once the connection is back and a fresh forecast loads (FR-006)', async () => {
+    setOnline(false)
+    networkUp = false
+    await setup({ client: restoredClient(2 * HOUR), forecast: forecastWhenUp })
+    expect(screen.getByText('Updated 2 h ago')).toBeInTheDocument()
+
+    networkUp = true
+    act(() => setOnline(true))
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+    expect(screen.getByRole('article', { name: 'Laundry' })).toBeInTheDocument()
+  })
+
+  it('offline with nothing saved shows the offline error, not a skeleton', async () => {
+    setOnline(false)
+    await setup({ forecast: () => HttpResponse.error() })
+    expect(await screen.findByRole('alert')).toHaveTextContent('You’re offline')
   })
 })

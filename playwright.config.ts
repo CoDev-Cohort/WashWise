@@ -11,6 +11,9 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'on-first-retry',
+    // A live service worker would precache during every test and race the `page.route` stubs.
+    // Only the specs that test the worker opt back in with `test.use({ serviceWorkers: 'allow' })`.
+    serviceWorkers: 'block',
   },
   projects: [
     { name: 'android-chrome', use: { ...devices['Pixel 7'] } },

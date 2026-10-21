@@ -7,6 +7,7 @@ import { HomeSkeleton } from '@/features/home/components/HomeSkeleton'
 import { OtherDaysList } from '@/features/home/components/OtherDaysList'
 import { RainChart } from '@/features/home/components/RainChart'
 import { VerdictCards } from '@/features/home/components/VerdictCards'
+import { formatDataAge } from '@/features/home/dataAge'
 import { buildDayStrip } from '@/features/home/dayStrip'
 import { buildOtherDays } from '@/features/home/otherDays'
 import { getRainBars } from '@/features/home/rainWindow'
@@ -19,15 +20,16 @@ import { useNow } from '@/lib/useNow'
 /**
  * The home page: header, day strip, verdict cards, rain chart and Other Days for the selected day
  * (FR-012). Section skeletons on the first load, one error pattern when it fails, and once a forecast
- * has loaded it stays: a failed update only adds a banner (P4 spec FR-001 – FR-007).
+ * has loaded it stays: a failed update only adds a banner (P4 spec FR-001 – FR-007). Offline, the last
+ * forecast (from the device after a restart) shows from today on, under a banner with its age (P4.2).
  */
 export function HomePage() {
   const coords = useCoordinates()
-  const forecast = useHomeForecast(coords)
+  const now = useNow()
+  const forecast = useHomeForecast(coords, now)
   const { view, copy } = forecast
   // The pill names the place the forecast on screen is for, so the two always agree.
   const place = useCityName(forecast.shownCoords.lat, forecast.shownCoords.lon)
-  const now = useNow()
   const { refresh, refreshing } = useLocationRefresh()
   const { theme, toggle } = useTheme()
   const [selected, setSelected] = useState(0)
@@ -51,12 +53,17 @@ export function HomePage() {
       {view.kind === 'ready' && view.stale && copy && (
         <StatusNotice
           variant="banner"
-          label="Couldn’t update the forecast"
+          label={view.reason === 'offline' ? copy.label : 'Couldn’t update the forecast'}
           hint={
-            view.previousLocation
-              ? `${copy.label}. Showing the forecast for your previous location.`
-              : `${copy.label}. Showing the last forecast that loaded.`
+            view.reason === 'offline'
+              ? view.previousLocation
+                ? 'Showing the last forecast, for your previous location.'
+                : 'Showing the last forecast that loaded.'
+              : view.previousLocation
+                ? `${copy.label}. Showing the forecast for your previous location.`
+                : `${copy.label}. Showing the last forecast that loaded.`
           }
+          meta={`Updated ${formatDataAge(view.data.fetchedAt, now)}`}
           onRetry={forecast.retry}
           retrying={forecast.isFetching}
         />
