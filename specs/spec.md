@@ -89,7 +89,7 @@ The suite checks that the app follows the system theme on first visit, that the 
 - **FR-012**: Tests that can't run on one profile MUST be skipped there with a stated reason.
 - **FR-013**: The whole CI run SHOULD finish within 15 minutes.
 - **FR-014**: How to run, debug and extend the suite, and what CI checks, MUST be documented for contributors.
-- **FR-015**: The check MUST be runnable by hand with an option to repeat every end-to-end test several times, to look for flaky tests (SC-005).
+- **FR-015**: A pull request MUST be able to request a flake check (every end-to-end test repeated 3 times) before merge, and the check MUST also be runnable by hand with a repeat option once it is on the default branch (SC-005).
 - **FR-016**: Making the check required for merging is a repository setting done by a repo admin; the documentation MUST say which checks to mark as required.
 
 ## Out of Scope
@@ -106,7 +106,7 @@ The suite checks that the app follows the system theme on first visit, that the 
 - **SC-002**: Every flow listed in COH-32 (granted, denied, blocked, day switching, theme toggle) has at least one passing end-to-end test on both profiles, or a stated skip reason.
 - **SC-003**: 0 end-to-end tests reach a real external service (verified by the refused-request guard).
 - **SC-004**: The CI run completes in under 15 minutes on a typical pull request.
-- **SC-005**: Before merge, one manual CI run with every end-to-end test repeated 3 times passes with no failures (flake check).
+- **SC-005**: Before merge, one CI run with every end-to-end test repeated 3 times (requested from the pull request) passes with no failures.
 
 ## Clarifications
 
@@ -117,5 +117,9 @@ The suite checks that the app follows the system theme on first visit, that the 
 ### Checklist 2026-10-21
 
 - CHK001 [Consistency] Blocking merges needs a repo admin to mark the check required; documented, not automated (FR-016).
-- CHK002 [Measurability] Flake check: a manual run repeating each end-to-end test 3 times (FR-015, SC-005).
+- CHK002 [Measurability] Flake check: a CI run repeating each end-to-end test 3 times, requested from the pull request (FR-015, SC-005).
 - CHK003 [Consistency] An unexpected external request fails the test and names the URL (FR-006, edge case).
+
+### Plan analysis 2026-10-21
+
+- Flake check is requested from the pull request (a label), because manual runs only work once the check is on the default branch (FR-015, SC-005).
