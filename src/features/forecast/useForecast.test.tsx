@@ -130,3 +130,21 @@ describe('useForecast', () => {
     expect(forecastKey(14.5995, 120.9842)).toEqual(['forecast', 14.6, 120.98])
   })
 })
+
+describe('useForecast: moving to another cell', () => {
+  it('keeps the previous forecast as placeholder data until the new one arrives', async () => {
+    const { wrapper } = setup()
+    const { result, rerender } = renderHook(
+      ({ lat, lon }: { lat: number; lon: number }) => useForecast(lat, lon),
+      { wrapper, initialProps: { lat: 14.6, lon: 120.98 } },
+    )
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    const first = result.current.data
+
+    rerender({ lat: 10.31, lon: 123.89 })
+    expect(result.current.data).toBe(first)
+    expect(result.current.isPlaceholderData).toBe(true)
+    await waitFor(() => expect(result.current.isPlaceholderData).toBe(false))
+    expect(result.current.data).toBeDefined()
+  })
+})

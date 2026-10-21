@@ -22,3 +22,11 @@ export type LocationStatus =
 export type PermissionResult = 'granted' | 'denied' | 'prompt' | 'unknown'
 
 export type LocationErrorKind = 'denied' | 'unavailable' | 'timeout'
+
+/** What `RequireLocation` hands to the pages under it through the router's outlet context. */
+export interface LocationOutletContext {
+  coordinates: Coordinates
+  /** Asks the device for the position again. Resolves with it, or `undefined` if it failed. */
+  request: () => Promise<Coordinates | undefined>
+  status: LocationStatus
+}

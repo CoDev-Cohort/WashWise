@@ -107,6 +107,24 @@ GET https://api.bigdatacloud.net/data/reverse-geocode-client
 
 <!-- /owner: 2.2 -->
 
+<!-- owner: 3.1 -->
+
+## Theme storage
+
+The user's light/dark choice is the only thing P3 stores.
+
+| Item         | Value                                                                                                                                                                                                                                                 |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Key          | `localStorage['ww-theme']` = `'light'` or `'dark'`. Absent or anything else = follow the system setting                                                                                                                                               |
+| Code         | [`themeStorage.ts`](src/features/theme/themeStorage.ts) (read, write, resolve, apply) and `useTheme.ts`                                                                                                                                               |
+| Before paint | A small inline script in [`index.html`](index.html) reads the same key and `prefers-color-scheme` and adds `dark` to `<html>`, so dark mode never flashes light. `themeStorage.test.ts` runs the script and fails if it disagrees with `resolveTheme` |
+| Browser UI   | `applyTheme` also sets the `theme-color` meta tags to the page color after a manual choice                                                                                                                                                            |
+| Failures     | Blocked or full storage is ignored: the toggle still works for the visit, and the system setting applies next time                                                                                                                                    |
+
+No theme data leaves the device.
+
+<!-- /owner: 3.1 -->
+
 <!-- owner: 1.7 -->
 
 ## PWA
