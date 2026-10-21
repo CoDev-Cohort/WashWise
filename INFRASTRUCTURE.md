@@ -56,6 +56,57 @@ There's no persistent cache yet. Offline support (service worker and runtime cac
 
 <!-- /owner: 1.4 -->
 
+<!-- owner: 2.1 -->
+
+## Location & storage
+
+WashWise uses the device's current location only. Code lives in [`src/features/location/`](src/features/location/).
+
+| Setting            | Value                                                                                                              | Where                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| Position request   | `getCurrentPosition` once per request; never `watchPosition`                                                       | [`geolocation.ts`](src/features/location/geolocation.ts) |
+| Accuracy           | Coarse (`enableHighAccuracy: false`). Weather needs about 1 km, and coarse fixes are faster                        | `geolocation.ts`                                         |
+| Timeout            | 10 s (`LOCATION_TIMEOUT_MS`). Browsers don't count time spent on the permission prompt                             | `geolocation.ts`                                         |
+| Reuse a recent fix | Up to 5 min old (`maximumAge`)                                                                                     | `geolocation.ts`                                         |
+| Secure pages only  | No `navigator.geolocation` or `window.isSecureContext` false gives `unsupported`, and no request is made           | `isGeolocationSupported()`                               |
+| Saved position     | `localStorage['washwise:location:v1']` = `{ "lat": 14.6, "lon": 120.98 }`, rounded to 2 dp (about 1 km). No expiry | [`storage.ts`](src/features/location/storage.ts)         |
+
+**Denied vs blocked.** A refused request is `blocked` (the spec's "permanently blocked") when the Permissions API reports `denied`, because the browser will not show the prompt again. If it reports `prompt`, the state is plain `denied` and "Try again" can ask again. "Try again" always calls the browser again, so it succeeds once the user re-enables location in the site settings.
+
+**No Permissions API.** Older browsers may lack `navigator.permissions` for geolocation. `queryPermission()` then returns `unknown`. The route guards only skip the landing page on a confirmed `granted`, so such users see the landing page on every visit and tap "Use my location" each time.
+
+**Storage failures.** A missing, corrupt or out-of-range record counts as no saved position. A failed write (private mode, full quota) is ignored. The app then behaves as a first visit.
+
+**Privacy.** The position stays on the device. Only the rounded coordinates leave it, in the forecast request and (P2 task 2.2) the place-name lookup.
+
+<!-- /owner: 2.1 -->
+
+<!-- owner: 2.2 -->
+
+## Place names (BigDataCloud)
+
+The location pill shows a place name from [BigDataCloud's `reverse-geocode-client`](https://www.bigdatacloud.com/free-api/free-reverse-geocode-to-city-api), which needs no key and allows browser calls. Code: [`geocode.ts`](src/features/location/geocode.ts) and [`useCityName.ts`](src/features/location/useCityName.ts).
+
+```
+GET https://api.bigdatacloud.net/data/reverse-geocode-client
+  ?latitude=<2 dp>&longitude=<2 dp>&localityLanguage=en
+```
+
+| Setting     | Value                                                                                                      |
+| ----------- | ---------------------------------------------------------------------------------------------------------- |
+| Name picked | First non-blank of `city`, `locality`, `principalSubdivision`, otherwise "Your location"                   |
+| Cache key   | `['cityName', lat2dp, lon2dp]`: every position in the same ~1 km cell shares one lookup                    |
+| Fresh for   | Forever within a visit (`staleTime: Infinity`). The cache is in memory only, so a reload looks it up again |
+| Timeout     | 10 s, then `GeocodeError('timeout')`                                                                       |
+| Retries     | Once for `network` or `http` ≥ 500; never for 429, `timeout` or `invalid`                                  |
+| Failure     | `useCityName` returns "Your location". The page is never blocked, and the error is not shown               |
+
+**Privacy.** The service receives the position rounded to about 1 km, plus the IP address any request carries, and nothing else. No key, cookie or identifier is sent.
+
+**Limits.** The keyless endpoint has no published rate guarantee. If it throttles or changes, every user simply sees "Your location" until it recovers.
+
+<!-- /owner: 2.2 -->
+
 <!-- owner: 1.7 -->
 
 ## PWA

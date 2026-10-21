@@ -60,11 +60,12 @@ Before saying a change is done, run `pnpm lint && pnpm typecheck && pnpm test`. 
 
 ```
 src/
-  app/          providers, QueryClient, router + routes
+  app/          providers, QueryClient, router + routes, route guards
   pages/        one component per route
-  components/   shared UI (layout/, errors/, icons/)
+  components/   shared UI (layout/, errors/, feedback/, icons/)
   features/
     forecast/   Open-Meteo client, normalizer, useForecast, fixtures
+    location/   device location (useGeolocation), saved position, place name (useCityName), RequireLocation
     verdict/    pure verdict engine + config.ts (no React)
     icons/      WMO code → Meteocons map (no React)
   lib/          small generic helpers and hooks
@@ -114,8 +115,9 @@ main.tsx
 └─ AppProviders            src/app/AppProviders.tsx — AppErrorBoundary › QueryClientProvider (+ devtools in dev)
    └─ RouterProvider       src/app/router.ts (createBrowserRouter) — routes in src/app/routes.tsx
       └─ MobileColumn      src/components/layout/MobileColumn.tsx — centered column, max-w 430 px, 26 px gutter
-         ├─ /      → LandingPage   (placeholder; location permission in P2)
-         ├─ /home  → HomePage      (placeholder; sections in P3)
+         ├─ /      → LandingPage   src/pages/LandingPage.tsx — location permission; `landingLoader` forwards returning users to /home
+         ├─ (homeLoader) RequireLocation   src/features/location/RequireLocation.tsx — refreshes the position, sends the user to / if permission is revoked
+         │   └─ /home → HomePage   (placeholder; sections in P3)
          └─ *      → redirect to /
 ```
 
@@ -142,6 +144,46 @@ main.tsx
 - Real recorded forecasts are in `src/features/forecast/__fixtures__/real/`. Re-record them with `pnpm fixtures:record` only on purpose, and review the golden snapshot diff afterwards.
 
 <!-- /owner: 1.4 -->
+
+<!-- owner: 2.1 -->
+
+## Location
+
+- Components get the device location **only through `useGeolocation()`** ([`src/features/location/useGeolocation.ts`](src/features/location/useGeolocation.ts)). Never call `navigator.geolocation`, `navigator.permissions` or `localStorage` for it from a component.
+- It returns `{ status, coordinates, request }`. `status` is `idle`, `requesting`, `granted`, `denied`, `blocked` (the spec's "permanently blocked"), `unavailable`, `timeout` or `unsupported`.
+- `request()` resolves with the coordinates, or `undefined` if it failed. Navigate on that result, not on a status change.
+- It never asks for the position by itself. The one exception is `useGeolocation({ refreshOnMount: true })`, which quietly refreshes a position when permission is already granted.
+- Saved coordinates (rounded to 2 dp, no expiry) are available on the first render. Use `.coordinates` for instant rendering.
+- One fix per request: no `watchPosition`, no manual location, no city search.
+- In tests, call `mockGeolocation()` from [`src/test/geolocation.ts`](src/test/geolocation.ts). `setup.ts` restores the stubs and clears `localStorage` after every test.
+- Settings and fallbacks are in [INFRASTRUCTURE.md](INFRASTRUCTURE.md#location--storage).
+
+<!-- /owner: 2.1 -->
+
+<!-- owner: 2.2 -->
+
+## Place name
+
+- The place name for the location pill comes **only from `useCityName(lat, lon)`** ([`src/features/location/useCityName.ts`](src/features/location/useCityName.ts)). Never call `fetchCityName` from a component.
+- It returns a plain string and always has something to show: "Your location" while loading, without coordinates, and when the lookup fails. No loading or error branch is needed.
+- Names are cached per ~1 km cell for the rest of the visit.
+- In tests, mock it with MSW: `server.use(http.get(GEOCODE_ENDPOINT, …))`. Any test that renders `HomePage` needs a handler, because unhandled requests fail the test.
+- Details and privacy notes are in [INFRASTRUCTURE.md](INFRASTRUCTURE.md#place-names-bigdatacloud).
+
+<!-- /owner: 2.2 -->
+
+<!-- owner: 2.4 -->
+
+## Route guard
+
+- Who sees what is decided by React Router **loaders** in [`src/app/locationGuards.ts`](src/app/locationGuards.ts), before anything renders, so there is no flash of the wrong page. `landingLoader` on `/` redirects to `/home`; `homeLoader` on `/home` redirects to `/`. Both check the same thing: the browser reports location as `granted` **and** a position is saved. They never throw.
+- A returning user never sees the landing page. A new user, a revoked user and a browser without the Permissions API always do.
+- `RequireLocation` wraps `/home`. It handles what happens after load: it refreshes the position quietly, and sends the user to `/` if permission is revoked or refused while the app is open. A failed refresh keeps the saved position and never redirects.
+- **Pages under `/home` get the position from `useCoordinates()`** ([`src/features/location/useCoordinates.ts`](src/features/location/useCoordinates.ts)), which is always defined there, then call `useForecast(lat, lon)`. They never read `localStorage` or the Geolocation API.
+- **P3 hand-off**: the refresh can move the position to a different ~1 km cell, which changes the forecast query key. Keep the previous forecast on screen while the new one loads (`placeholderData: keepPreviousData` in the page code).
+- Tests that render the real routes must call `mockGeolocation()` and, for a returning user, `saveLocation()` first. The loaders are async, so wait for `router.state.initialized` (see `src/app/routes.test.tsx`).
+
+<!-- /owner: 2.4 -->
 
 <!-- owner: 1.5 -->
 
