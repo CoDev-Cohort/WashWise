@@ -118,8 +118,15 @@ describe('fetchForecast', () => {
   it('passes a caller abort during the body read through', async () => {
     server.use(http.get(FORECAST_ENDPOINT, () => stalledBody()))
     const controller = new AbortController()
+    // Abort the moment the body read starts, not after a fixed delay: on a slow CI runner the mocked
+    // connection could fail first, which made this test flaky (P4.4).
+    const json = Response.prototype.json
+    vi.spyOn(Response.prototype, 'json').mockImplementation(function (this: Response) {
+      const reading = json.call(this)
+      controller.abort()
+      return reading
+    })
     const pending = fetchForecast(0, 0, { signal: controller.signal })
-    setTimeout(() => controller.abort(), 50)
     const err = await pending.catch((e: unknown) => e)
     expect(err).not.toBeInstanceOf(ForecastError)
   })

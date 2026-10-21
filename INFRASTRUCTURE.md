@@ -216,6 +216,24 @@ A dismissed toast comes back on the next check. When every WashWise tab or windo
 
 ## CI checks
 
-> TODO (task P4)
+<!-- owner: 4.4 -->
+
+GitHub Actions runs every check a contributor runs locally. Workflows live in [`.github/workflows/`](.github/workflows/).
+
+| Workflow                                                                 | When                                                               | What                                                                                                          |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| **CI** ([`ci.yml`](.github/workflows/ci.yml))                            | Every pull request to `dev`/`main`, every push to them, or by hand | Job `checks`: `format:check`, `lint`, `typecheck`, `test`, `build` (one step each). Job `e2e`: below          |
+| **e2e** ([`e2e.yml`](.github/workflows/e2e.yml))                         | Called by CI and Flake check, never on its own                     | `pnpm e2e` on `android-chrome` (Chromium) and `ios-safari` (WebKit) in parallel, against the production build |
+| **Flake check** ([`flake-check.yml`](.github/workflows/flake-check.yml)) | Adding the `flake-check` label to a pull request                   | The e2e job with every test repeated 3 times (`--repeat-each=3`)                                              |
+
+- **Node 24** and pnpm from `packageManager`, with the pnpm store cached. Playwright browsers are cached per version and browser.
+- A newer push to the same branch **cancels** the run in progress.
+- **Retries**: a failed e2e test is retried once on CI (`playwright.config.ts`). One that passes on the retry is marked **flaky** in the report and the PR annotations; treat that as a bug to fix, not a pass.
+- **Reports**: each e2e leg uploads `playwright-report-<project>` (always) and `test-results-<project>` (traces, on failure), kept 14 days. To debug, download the artifact from the run page, unzip it, and run `npx playwright show-report <folder>`, or `npx playwright show-trace <trace.zip>`.
+- **Manual run**: Actions → CI → Run workflow, with "Run every e2e test this many times". This is only available once the workflows are on the default branch; before that, use the `flake-check` label.
+- **Required checks** (a repo admin sets these in branch protection for `dev` and `main`): `checks`, `e2e / android-chrome`, `e2e / ios-safari`. The Flake check jobs have their own names, so labels never cancel or stand in for these.
+- **Deploy** (task 4.5, COH-33) can rely on the same checks being green instead of running its own lint and tests.
+
+<!-- /owner: 4.4 -->
 
 <!-- /owner: P4 -->

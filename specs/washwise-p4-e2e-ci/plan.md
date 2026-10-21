@@ -143,6 +143,15 @@ The spec has no open `[NEEDS CLARIFICATION]` items. Planning decisions:
 - **Flake check trigger** (analysis, HIGH): a `flake-check` PR label, because `workflow_dispatch` only works from the default branch. Spec FR-015 amended.
 - **Keyboard tests on WebKit**: skipped with a reason (Playwright WebKit doesn't Tab to buttons by default), as in 4.3.
 
+## Implementation notes
+
+- **Three workflow files, not one** (changes the CI section above). Putting the `labeled` trigger in `ci.yml` meant any label cancelled the in-progress run (shared concurrency group). A skipped job would also have shared the required checks' names and could hide an earlier failure. So:
+  - `e2e.yml` is a reusable workflow (`workflow_call`, input `repeat_each`);
+  - `ci.yml` runs `checks` and calls it (check names `checks`, `e2e / android-chrome`, `e2e / ios-safari`);
+  - `flake-check.yml` calls it with 3 repeats on the `flake-check` label, under its own names and concurrency group.
+- **First real CI run** (T011, T012): both e2e legs passed on the first run, including WebKit, so no WebKit triage was needed. `checks` failed once on a P1 unit test, `api.test.ts` "passes a caller abort during the body read through". It aborted on a fixed 50 ms timer, and on the runner the mocked connection sometimes failed first ("network" instead of the abort). The test now aborts the moment `response.json()` starts, which is deterministic. It was checked to still fail when `api.ts` stops passing aborts through. It didn't reproduce locally on Node 24 (6 runs).
+- 9 spec files were migrated to `./fixtures` (the plan said 10).
+
 ## Known Risks
 
 | Risk                                                         | Status                                                                                  |

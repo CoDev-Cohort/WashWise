@@ -257,6 +257,19 @@ HomePage
 
 <!-- /owner: 4.3 -->
 
+<!-- owner: 4.4 -->
+
+## End-to-end tests
+
+- Specs import **`{ test, expect }` from `./fixtures`**, never from `@playwright/test` (ESLint enforces it). The fixture **fails any test that makes an external request it didn't stub** and names the URL, so stub every service the page calls: `stubExternalServices(page)` (place names; forecast refused), `stubForecast(page)` (recorded Manila forecast and a pinned clock), or your own `page.route`.
+- **Location** comes from `fakeLocation(page, { permission, answer })` in `e2e/support.ts`. It returns `{ permission(state), answer(next) }`, so a test can refuse, then allow, or revoke while the page is open; it fires the permission `change` event the app listens to. `stubGeolocation(page, outcome)` is the preset for one landing state. Don't mix it with `LOCATION_ALLOWED` (Playwright's own geolocation), which is fine for specs that only need "granted".
+- **Pin the clock** (`page.clock.setFixedTime`) inside the recorded forecast whenever verdicts or hours are checked.
+- Flow specs: `permission-flows`, `day-switching` (expected verdicts come from the real engine via a relative import), `theme`. Page checks: `home`, `location`, `smoke`. Accessibility: `a11y`, `keyboard`, `layout-a11y`. PWA: `pwa`, `offline`.
+- A test that can't run on one engine is **skipped with a reason** (`test.skip(browserName === 'webkit', '…')`), never deleted. Playwright's WebKit doesn't Tab to buttons; Chromium-only features (offline service worker, forced colors) are skipped on WebKit.
+- CI runs everything on both profiles (see [INFRASTRUCTURE.md](INFRASTRUCTURE.md#ci-checks)). If your sandbox lacks WebKit, the PR's `e2e / ios-safari` job is where it runs.
+
+<!-- /owner: 4.4 -->
+
 ## Verdict engine
 
 Lives in `src/features/verdict/`. It is pure TypeScript: **no React or TanStack imports** (enforced by ESLint, FR-006). Every function takes `now` as an argument, so tests never touch the clock.
