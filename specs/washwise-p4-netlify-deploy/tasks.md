@@ -1,8 +1,8 @@
 # Tasks: WashWise P4.5 · Netlify Deployment with HTTPS and Preview Builds
 
 **Date**: 2026-10-21
-**Spec**: specs/spec.md
-**Plan**: specs/plan.md
+**Spec**: specs/washwise-p4-netlify-deploy/spec.md
+**Plan**: specs/washwise-p4-netlify-deploy/plan.md
 **Structure**: By user story (B)
 **Tracker**: Linear COH-33 (task 4.5, parent COH-9)
 
