@@ -49,12 +49,12 @@ describe('RequireLocation', () => {
     expect(router.state.location.pathname).toBe('/home')
   })
 
-  it('goes back to the landing page when the refresh is refused', async () => {
+  it('stays on the page when the refresh is refused but the browser still reports granted', async () => {
     const { geo, router } = renderHome({ permission: 'granted' })
     await waitFor(() => expect(geo.pending()).toBe(1))
     await act(async () => geo.rejectWith(1))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/'))
-    expect(screen.getByText('Landing')).toBeInTheDocument()
+    expect(screen.getByText('Home at 14.6, 120.98')).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/home')
   })
 
   it('goes back to the landing page when permission is revoked while the app is open', async () => {

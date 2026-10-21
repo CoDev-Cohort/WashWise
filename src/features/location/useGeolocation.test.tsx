@@ -217,13 +217,24 @@ describe('useGeolocation: returning user (refreshOnMount)', () => {
     expect(result.current.coordinates).toEqual({ lat: 14.6, lon: 120.98 })
   })
 
-  it('treats a refused refresh as a revoked permission', async () => {
+  it('keeps the saved position when the refresh is refused but the browser still says granted', async () => {
     const geo = mockGeolocation({ permission: 'granted' })
     seed()
     const { result } = setup({ refreshOnMount: true })
     await waitFor(() => expect(geo.pending()).toBe(1))
     await act(async () => geo.rejectWith(1))
-    expect(result.current.status).toBe('denied')
+    expect(result.current.status).toBe('granted')
+    expect(result.current.coordinates).toEqual({ lat: 14.6, lon: 120.98 })
+  })
+
+  it('is blocked when the refresh is refused and the browser reports denied', async () => {
+    const geo = mockGeolocation({ permission: 'granted' })
+    seed()
+    const { result } = setup({ refreshOnMount: true })
+    await waitFor(() => expect(geo.pending()).toBe(1))
+    geo.setPermission('denied')
+    await act(async () => geo.rejectWith(1))
+    expect(result.current.status).toBe('blocked')
   })
 
   it('does not refresh without the option', async () => {

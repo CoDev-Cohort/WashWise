@@ -74,14 +74,20 @@ export function useGeolocation({
 
     let active = true
 
-    /** The background refresh. Failures other than a refusal are ignored: the saved position stays. */
+    /**
+     * The background refresh. The saved position stays on every failure. A refusal only matters when
+     * the browser also reports the permission as denied: with it still granted (system location
+     * services off, say) leaving would just bounce the user back here from the landing page.
+     */
     const refresh = async () => {
       try {
         const position = await getPosition()
         saveLocation(position)
         if (active) setCoordinates(keepIfSame(position))
       } catch (error) {
-        if (error instanceof LocationError && error.kind === 'denied') await handleDenied()
+        if (error instanceof LocationError && error.kind === 'denied') {
+          if ((await queryPermission()) === 'denied' && active) setStatus('blocked')
+        }
       }
     }
 
