@@ -88,9 +88,9 @@ The suite checks that the app follows the system theme on first visit, that the 
 - **FR-011**: CI MUST retry a failed end-to-end test at most once and report retried tests as flaky.
 - **FR-012**: Tests that can't run on one profile MUST be skipped there with a stated reason.
 - **FR-013**: The whole CI run SHOULD finish within 15 minutes.
-- **FR-016**: Making the check required for merging is a repository setting done by a repo admin; the documentation MUST say which checks to mark as required.
 - **FR-014**: How to run, debug and extend the suite, and what CI checks, MUST be documented for contributors.
 - **FR-015**: The check MUST be runnable by hand with an option to repeat every end-to-end test several times, to look for flaky tests (SC-005).
+- **FR-016**: Making the check required for merging is a repository setting done by a repo admin; the documentation MUST say which checks to mark as required.
 
 ## Out of Scope
 
