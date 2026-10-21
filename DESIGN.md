@@ -207,6 +207,20 @@ Built from the existing tokens only. The page is [`src/pages/HomePage.tsx`](src/
 
 <!-- /owner: 4.1 -->
 
+<!-- owner: 4.2 -->
+
+## Offline, update and install prompts
+
+Figma has no frames for these; they reuse existing tokens only.
+
+- **Offline / stale banner**: the P4.1 `StatusNotice` banner. Offline it reads "You’re offline" with "Showing the last forecast that loaded." A third line, "Updated X ago" (`font-caption text-caption text-ink-muted`), sits outside the live region so it can tick every minute without being re-announced.
+- **Bottom prompt slot** (`PwaPrompts`): fixed to the bottom of the ≤ 430 px column, inside the gutter, above the safe-area inset. A spacer of the same height lets the page scroll clear of it. One prompt at a time; the update toast wins.
+- **Prompt card** (`promptStyles.ts`): inverted card, `bg-ink text-on-ink rounded-lg shadow-lg`, a decorative 20 px Lucide icon, `font-status` label. Primary action `bg-on-ink text-ink`, secondary action underlined `text-on-ink`; both at least 44 px tall. Inverting `ink`/`on-ink` keeps it legible in dark mode with no new tokens.
+- **Update toast**: "A new version is available" · Dismiss · **Reload**.
+- **Install prompt**: "Install WashWise" / "Open it from your home screen, even offline." · Not now · **Install**.
+
+<!-- /owner: 4.2 -->
+
 <!-- owner: 1.8 -->
 
 ## Dark palette & contrast

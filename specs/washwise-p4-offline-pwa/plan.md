@@ -156,6 +156,12 @@ The spec has no open `[NEEDS CLARIFICATION]` items. Planning decisions:
 - **Banner announcement**: label and hint announced once; the ticking age line sits outside the live region.
 - **Visit**: one browser session (`sessionStorage` flag), counted at startup.
 
+## Implementation notes
+
+- **No new packages (changes T001, T009).** `createSyncStoragePersister` is deprecated in TanStack Query 5.104, and `PersistQueryClientProvider` restores asynchronously, which would flash the skeleton before a cached forecast. Persistence uses TanStack's own `dehydrate` / `hydrate` instead (`cachePersistence.ts`): a synchronous restore in `AppProviders` before the first render, and a throttled save on each forecast success plus on `visibilitychange` → hidden. Same storage key, cap, max age and `FORECAST_CACHE_VERSION` buster as planned.
+- **`useHomeForecast(coords, now)`** takes `now` from `HomePage`; the shown forecast's age is read from `view.data.fetchedAt` rather than a separate field.
+- **ESLint**: `import-x/no-unresolved` ignores `^virtual:` (Vite plugin virtual modules).
+
 ## Known Risks
 
 | Risk                                                                                                    | Status                                                                                               |

@@ -227,6 +227,19 @@ HomePage
 
 <!-- owner: 1.5 -->
 
+<!-- owner: 4.2 -->
+
+## Offline and PWA
+
+- **Forecasts persist under the QueryClient**, not in components: [`cachePersistence.ts`](src/features/forecast/cachePersistence.ts) restores them in `AppProviders` before the first render and saves the 3 newest. Components still read `useForecast` / `useHomeForecast`. Changing the `Forecast` shape? Bump `FORECAST_CACHE_VERSION` (a test fails until you do).
+- **Offline is `useOnline()`**, passed to `getHomeViewState` with `now`. Stale `ready` states carry `reason: 'offline' | 'failed'`. `forecastFromToday(forecast, now)` drops ended days, so a restored forecast starts at the real today.
+- **`PwaPrompts`** (in `MobileColumn`) is the one bottom slot: the update toast (`useAppUpdate`, registers the service worker) wins over the install prompt (`useInstallPrompt`, `/home` only, from the second visit).
+- Storage: only `cachePersistence.ts` touches `ww-forecast-cache`; only `installStorage.ts` touches `ww-visits`, `ww-visit-counted`, `ww-install-dismissed`.
+- **Tests**: mock the service worker with `vi.mock('virtual:pwa-register/react', () => import('@/test/pwaRegister'))` and drive it with `pwaRegister`. Fake install offers come from `offerInstall()` in [`src/test/installPrompt.ts`](src/test/installPrompt.ts). For offline page tests, stub `navigator.onLine`, dispatch `offline`, and make MSW fail too (TanStack only hears the event once mounted). Reset `onlineManager.setOnline(true)` after.
+- Details: [INFRASTRUCTURE.md](INFRASTRUCTURE.md#offline--updates).
+
+<!-- /owner: 4.2 -->
+
 ## Verdict engine
 
 Lives in `src/features/verdict/`. It is pure TypeScript: **no React or TanStack imports** (enforced by ESLint, FR-006). Every function takes `now` as an argument, so tests never touch the clock.

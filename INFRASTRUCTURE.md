@@ -52,7 +52,7 @@ GET https://api.open-meteo.com/v1/forecast
 
 **How failures surface**: `useForecast` returns `error: ForecastError` with `kind` set to `network`, `timeout`, `http` (with `status`) or `invalid`. The UI reads `kind` to choose a message (P4 designs the final error states). A request cancelled by the caller isn't treated as a failure.
 
-There's no persistent cache yet. Offline support (service worker and runtime caching) arrives in task 4.2.
+Forecasts are also kept on the device so the app works offline: see [Offline & updates](#offline--updates).
 
 <!-- /owner: 1.4 -->
 
@@ -150,7 +150,7 @@ WashWise is installable (Add to Home Screen) through [`vite-plugin-pwa`](https:/
 
 **Icons** are generated from [`public/logo.svg`](public/logo.svg) with `pnpm pwa:assets` (`@vite-pwa/assets-generator`, minimal-2023 preset, navy background for maskable and Apple icons). ⚠️ The logo is a **placeholder**: Figma has no logo yet. Replace `public/logo.svg` (and `public/favicon.svg`), then re-run `pnpm pwa:assets`.
 
-**Service worker**: until task 4.2, the plugin runs with `selfDestroying: true`. The generated `sw.js` caches nothing, unregisters itself and clears any old caches, so testers never see a stale build. Chrome doesn't need a service worker to install, and iOS never has. **Offline support arrives in task 4.2**, which removes `selfDestroying` and adds precaching and runtime caching for the forecast API.
+**Service worker**: precaches the app shell and asks before switching versions. See [Offline & updates](#offline--updates).
 
 ### Verifying installability
 
@@ -166,6 +166,47 @@ Lighthouse no longer has PWA audits (removed in v12), so check it this way inste
 Evidence lives in [`docs/screenshots/pwa/`](docs/screenshots/pwa/).
 
 <!-- /owner: 1.7 -->
+
+<!-- owner: 4.2 -->
+
+## Offline & updates
+
+Two separate pieces make WashWise work offline: the **service worker** keeps the app's own files, and the **persisted query cache** keeps forecasts. The service worker never touches Open-Meteo or BigDataCloud requests, so timeouts, retries and `ForecastError` stay in one place (`api.ts`, `queryClient.ts`).
+
+**App shell** ([`vite.config.ts`](vite.config.ts), Workbox `generateSW`):
+
+| Setting         | Value                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| Precache        | Every built `js, css, html, svg, png, ico, woff2, webmanifest` file (~0.8 MB, fonts and Meteocons too) |
+| Navigation      | `navigateFallback: 'index.html'`, so `/` and `/home` open offline                                      |
+| Runtime caching | None                                                                                                   |
+| Updates         | `registerType: 'prompt'`: a new version waits until the user taps **Reload** in the update toast       |
+| Update checks   | On launch (browser), hourly while open, and when the app returns to the foreground (`useAppUpdate.ts`) |
+| HTTP caching    | `vercel.json` serves `sw.js`, `index.html` and the manifest with `Cache-Control: no-cache`             |
+
+A dismissed toast comes back on the next check. When every WashWise tab or window is closed, the next launch opens the new version without asking.
+
+**Kill switch.** If a release is broken and users are stuck on it, set `selfDestroying: true` in the `VitePWA` options and deploy. The new `sw.js` unregisters itself and deletes its caches on every device at the next check; the app then runs online-only until the switch is removed.
+
+**Forecasts** ([`cachePersistence.ts`](src/features/forecast/cachePersistence.ts)):
+
+| Setting       | Value                                                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Storage       | `localStorage['ww-forecast-cache']`: TanStack `dehydrate` output for the **3 newest** successful forecasts, plus `FORECAST_CACHE_VERSION` |
+| Restore       | Synchronously, before the first render (`AppProviders`), so a returning user sees the last forecast at once                               |
+| Save          | At most once a second after a forecast loads, and at once when the page is hidden                                                         |
+| Max age       | 7 days (`FORECAST_CACHE_MAX_AGE`, also the `gcTime`): a forecast covers 7 days                                                            |
+| Refresh       | Stale-while-revalidate through `staleTime`: a restored forecast older than 30 min refetches in the background                             |
+| Shape changes | Bump `FORECAST_CACHE_VERSION` when `Forecast` changes; `cachePersistence.test.ts` fails until you do. Older saves are discarded           |
+| Failures      | Blocked or full storage is ignored: the app works, without an offline copy                                                                |
+
+**Offline on the home page** ([`homeViewState.ts`](src/features/home/homeViewState.ts)): "offline" is what the device reports (`useOnline`), never TanStack's fetch status, because TanStack assumes it is online at startup. Offline, the home page shows the forecast for the current cell, or else the newest saved one from anywhere, with a "You’re offline" banner and "Updated X ago". Days that have ended are dropped (`forecastFromToday`); once no saved day covers today, it shows the offline error. TanStack refetches when the connection returns.
+
+**Install prompt** ([`src/features/pwa/`](src/features/pwa/)): on Chromium, the `beforeinstallprompt` event is kept (which also hides Chrome's own install bar) and an in-app "Install WashWise" prompt shows on `/home` from the second visit on. Other storage keys: `ww-visits` (visit count, once per session via `sessionStorage['ww-visit-counted']`) and `ww-install-dismissed` ("Not now", no expiry). Nothing new leaves the device.
+
+**Testing**: `e2e/offline.spec.ts` opens the production build offline (Chromium only: Playwright's WebKit has no service workers; check iPhone by hand). Other e2e specs run with `serviceWorkers: 'block'`. To run e2e in a sandbox whose Chromium differs from Playwright's, pass `launchOptions.executablePath`.
+
+<!-- /owner: 4.2 -->
 
 <!-- owner: P4 -->
 

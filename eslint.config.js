@@ -36,7 +36,8 @@ export default tseslint.config(
       ],
     },
     rules: {
-      'import-x/no-unresolved': 'error',
+      // Vite plugin virtual modules (vite-plugin-pwa) exist only at build time.
+      'import-x/no-unresolved': ['error', { ignore: ['^virtual:'] }],
       // TypeScript already checks default vs named imports.
       'import-x/no-named-as-default': 'off',
       'import-x/no-named-as-default-member': 'off',
