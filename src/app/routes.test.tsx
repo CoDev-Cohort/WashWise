@@ -1,10 +1,12 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen, waitFor } from '@testing-library/react'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse, type JsonBodyType } from 'msw'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback'
 import { MobileColumn } from '@/components/layout/MobileColumn'
+import { REAL_FIXTURES } from '@/features/forecast/__fixtures__/realFixtures'
+import { FORECAST_ENDPOINT } from '@/features/forecast/query'
 import { GEOCODE_ENDPOINT } from '@/features/location/geocode'
 import { saveLocation } from '@/features/location/storage'
 import { mockGeolocation, type MockGeolocationOptions } from '@/test/geolocation'
@@ -12,11 +14,17 @@ import { server } from '@/test/msw/server'
 import { createQueryClient } from './queryClient'
 import { routes } from './routes'
 
+const MANILA_FORECAST = REAL_FIXTURES.find((f) => f.meta.place === 'manila')!
+  .response as JsonBodyType
+
 /** Renders the real routes with the browser's location state set up as the test needs. */
 async function renderAt(path: string, browser: MockGeolocationOptions, saved = false) {
   const geo = mockGeolocation(browser)
   if (saved) saveLocation({ lat: 14.6, lon: 120.98 })
-  server.use(http.get(GEOCODE_ENDPOINT, () => HttpResponse.json({ city: 'Manila' })))
+  server.use(
+    http.get(GEOCODE_ENDPOINT, () => HttpResponse.json({ city: 'Manila' })),
+    http.get(FORECAST_ENDPOINT, () => HttpResponse.json(MANILA_FORECAST)),
+  )
   const router = createMemoryRouter(routes, { initialEntries: [path] })
   render(
     <QueryClientProvider client={createQueryClient()}>
@@ -84,13 +92,18 @@ describe('routes: returning user (allowed, position saved)', () => {
 
   it('/home shows the place name', async () => {
     await renderAt('/home', { permission: 'granted' }, true)
-    expect(await screen.findByText('Showing weather for Manila.')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: 'Update location, Manila' }),
+    ).toBeInTheDocument()
   })
 
   it('/home still renders when the place-name lookup fails', async () => {
     mockGeolocation({ permission: 'granted' })
     saveLocation({ lat: 14.6, lon: 120.98 })
-    server.use(http.get(GEOCODE_ENDPOINT, () => HttpResponse.error()))
+    server.use(
+      http.get(GEOCODE_ENDPOINT, () => HttpResponse.error()),
+      http.get(FORECAST_ENDPOINT, () => HttpResponse.json(MANILA_FORECAST)),
+    )
     const router = createMemoryRouter(routes, { initialEntries: ['/home'] })
     render(
       <QueryClientProvider client={createQueryClient()}>
@@ -98,7 +111,9 @@ describe('routes: returning user (allowed, position saved)', () => {
       </QueryClientProvider>,
     )
     expect(await screen.findByRole('heading', HOME_HEADING)).toBeInTheDocument()
-    expect(screen.getByText('Showing weather for Your location.')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Update location, Your location' }),
+    ).toBeInTheDocument()
   })
 
   it('refreshes the position in the background without leaving /home', async () => {

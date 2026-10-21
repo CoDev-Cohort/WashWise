@@ -157,13 +157,39 @@ There is no Figma frame for the landing page. It is built from the existing toke
 
 <!-- /owner: 2.3 -->
 
+<!-- owner: 3.6 -->
+
+## Home page
+
+Built from the existing tokens only. The page is [`src/pages/HomePage.tsx`](src/pages/HomePage.tsx) and the sections are in [`src/features/home/components/`](src/features/home/components/). Order, top to bottom:
+
+| Section           | Component                         | Tokens and type                                                                                                                         |
+| ----------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Header            | `HomeHeader`                      | wordmark `font-display text-display text-ink-strong`; pill `bg-surface-muted rounded-sm font-location text-location`; toggle `text-ink` |
+| Title             | `h1` in `HomePage`                | `font-title text-title text-ink`                                                                                                        |
+| Day strip         | `DayStrip`                        | chip `rounded-lg`, `gap-chip-gap`; selected `bg-ink text-on-ink`, others `border-border bg-surface`; `font-day`, `font-date`            |
+| Verdict cards     | `VerdictCard`                     | `rounded-xl border`, `gap-card-gap`; per verdict `-bg` / `-border` / `-text` / `-pill`; word `font-verdict`, sub-label `font-sublabel`  |
+| Rain chance       | `RainChart`                       | title `font-section text-ink-section`; bar `rain-1…5` by chance on `bg-surface-muted`; `%` `font-metric`, hour `font-body`              |
+| Other days        | `OtherDaysList`, `OtherDayMarker` | row `border-border bg-surface rounded-lg`; Yes `text-accent`, Maybe `text-accent-alt`, Wait `text-ink-strong`, "—" `text-ink-muted`     |
+| Loading / failure | `HomeSkeleton`, `HomeError`       | skeleton `bg-surface-muted` (pulse stops under reduced motion); error is an `alert` with the primary button                             |
+
+- **Rain bar colors** (chance → token): < 20 `rain-1`, < 40 `rain-2`, < 60 `rain-3`, < 80 `rain-4`, otherwise `rain-5`. The dark palette flips the scale so a higher chance is lighter.
+- **Cards**: green, amber and red come from the verdict; an unavailable verdict uses `bg-surface-muted` and "Verdict unavailable". Weather pills hold the drying time ("Dries in ~2.5 hrs", "Dries tomorrow") and the condition with a decorative static icon.
+- **Location pill**: shows the place name; the spinner replaces the pin while refreshing, and the button is disabled and `aria-busy`. Its name is "Update location" plus the place (for example "Update location, Manila").
+- **Theme toggle**: `Sun` in dark mode, `Moon` in light mode; the label states the action ("Switch to dark mode" / "Switch to light mode"). Icons are `aria-hidden`.
+- **Markers**: Yes `Check`, Maybe `CircleHelp`, Wait `X`, unavailable `Minus`. Each marker is icon plus text, never color alone.
+- **Accessibility**: day chips are real buttons with `aria-pressed`; the chart's bars are `aria-hidden` and a visually hidden list reads "3 PM: 55% chance of rain"; each card is an `article` named by its activity.
+- **To check against Figma**: the Figma export was not inspected in code, so section spacing (`gap-6`), the chart's bar height (`h-24`) and the Other Days row layout (both activities per row) are approximations. They are verified by the human tasks T013, T018, T021 and T028.
+
+<!-- /owner: 3.6 -->
+
 <!-- owner: 1.8 -->
 
 ## Dark palette & contrast
 
 Figma has no dark design, so every token's dark value was **derived** from the light set. Each keeps its role and hue: surfaces become deep navy, ink becomes near-white, and verdict cards become dark tints with light text. The rain scale flips so more rain is lighter (it stays the most prominent bar on a dark background).
 
-**How it switches**: dark values live in a `.dark { … }` block in [`tokens.css`](src/styles/tokens.css). Adding `class="dark"` to `<html>` swaps every `--ww-*` variable, and Tailwind utilities follow automatically (`@custom-variant dark` is also available for the rare one-off `dark:` override). P3 adds the Sun/Moon toggle, defaulting to the system setting and persisted in localStorage.
+**How it switches**: dark values live in a `.dark { … }` block in [`tokens.css`](src/styles/tokens.css). Adding `class="dark"` to `<html>` swaps every `--ww-*` variable, and Tailwind utilities follow automatically (`@custom-variant dark` is also available for the rare one-off `dark:` override). The Sun/Moon toggle (see [Home page](#home-page)) defaults to the system setting and is saved in localStorage; an inline script in `index.html` applies it before first paint.
 
 | Token                                                 | Light                                             | Dark                                              |
 | ----------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- |

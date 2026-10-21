@@ -103,7 +103,7 @@ specs/          spec, plan and tasks per workflow
 - **Verdict thresholds live only in `src/features/verdict/config.ts`.** Changing one also means updating spec FR-004b.
 - **Always the device's current location.** There's no city search and no manual location (product-wide decision).
 - Three verdicts only: Go Wash / Caution / Not yet. The Other Days list shows Yes / Maybe / Wait, or "—" when unavailable.
-- Dark mode is a `dark` class on `<html>`. The toggle and its persistence come in P3; it defaults to the system setting.
+- Dark mode is a `dark` class on `<html>`. It follows the system setting until the user taps the Sun/Moon toggle; the choice is saved (see Home page and theme).
 - No accounts, no server, no analytics in P1.
 
 <!-- owner: 1.3 -->
@@ -117,7 +117,7 @@ main.tsx
       └─ MobileColumn      src/components/layout/MobileColumn.tsx — centered column, max-w 430 px, 26 px gutter
          ├─ /      → LandingPage   src/pages/LandingPage.tsx — location permission; `landingLoader` forwards returning users to /home
          ├─ (homeLoader) RequireLocation   src/features/location/RequireLocation.tsx — refreshes the position, sends the user to / if permission is revoked
-         │   └─ /home → HomePage   (placeholder; sections in P3)
+         │   └─ /home → HomePage   src/pages/HomePage.tsx — header, day strip, verdict cards, rain chart, Other Days
          └─ *      → redirect to /
 ```
 
@@ -180,10 +180,36 @@ main.tsx
 - A returning user never sees the landing page. A new user, a revoked user and a browser without the Permissions API always do.
 - `RequireLocation` wraps `/home`. It handles what happens after load: it refreshes the position quietly, and sends the user to `/` if permission is revoked or refused while the app is open. A failed refresh keeps the saved position and never redirects.
 - **Pages under `/home` get the position from `useCoordinates()`** ([`src/features/location/useCoordinates.ts`](src/features/location/useCoordinates.ts)), which is always defined there, then call `useForecast(lat, lon)`. They never read `localStorage` or the Geolocation API.
-- **P3 hand-off**: the refresh can move the position to a different ~1 km cell, which changes the forecast query key. Keep the previous forecast on screen while the new one loads (`placeholderData: keepPreviousData` in the page code).
+- **P3 hand-off**: the refresh can move the position to a different ~1 km cell, which changes the forecast query key. `useForecast` keeps the previous forecast as `data` while the new one loads (`placeholderData: keepPreviousData`), so the page never blanks.
 - Tests that render the real routes must call `mockGeolocation()` and, for a returning user, `saveLocation()` first. The loaders are async, so wait for `router.state.initialized` (see `src/app/routes.test.tsx`).
 
 <!-- /owner: 2.4 -->
+
+<!-- owner: 3.6 -->
+
+## Home page and theme
+
+`HomePage` ([`src/pages/HomePage.tsx`](src/pages/HomePage.tsx)) only wires things together; the sections live in `src/features/home/`.
+
+```
+HomePage
+├─ HomeHeader        wordmark · LocationPill (tap = re-request location + refetch) · ThemeToggle
+├─ h1 "Should you wash?"
+├─ DayStrip          6 days, Today first (HomePage holds `selectedDay`)
+├─ VerdictCards      Laundry + Car Wash for the selected day
+├─ RainChart         5 hourly bars (+ screen-reader list)
+├─ OtherDaysList     the strip's days after Today, Laundry + Car Wash markers
+└─ HomeSkeleton / HomeError   while the first forecast loads / when it fails
+```
+
+- **One selected day drives the cards and the chart.** `selectedDay` is an index into `Forecast.daily`. Today (index 0) uses the "from now" engine (`computeLaundryVerdict`, `computeCarWashVerdict`), which can move laundry to tomorrow late in the day. Other days use `computeDayVerdicts`, the same results as Other Days.
+- **Pure helpers take `now`** and are tested table-driven: `buildDayStrip`, `getRainBars` (Today = 5 hours from the current one, rolling into the next day; other days = 12–4 PM), `getCardContent`, `buildOtherDays`. Day names and dates come from `DailyPoint.date` and `Forecast.utcOffsetSeconds`, never the device's time zone. `HomePage` gets the time from `useNow()` (re-renders each minute).
+- **Location pill**: `useLocationRefresh()` (in `useCoordinates.ts`) calls the same `request()` that `RequireLocation` owns, shared through the router outlet context `{ coordinates, request, status }`, then invalidates the forecast for the new position. One refresh at a time; a failed one keeps the old position and forecast.
+- **Theme**: `src/features/theme/`. `useTheme()` returns `{ theme, toggle }`; only `themeStorage.ts` touches `localStorage` (`ww-theme`, `'light' | 'dark'`, absent = follow the system). An inline script in `index.html` sets the `dark` class before first paint; `themeStorage.test.ts` fails if it drifts from `resolveTheme`. Never read the theme from a component directly.
+- **States**: first load shows `HomeSkeleton`; a failed first load shows `HomeError` ("Try again" refetches). Once data exists, background failures never replace it.
+- **Tests that render `HomePage`** need MSW handlers for both the forecast and the geocoder, and `vi.useFakeTimers({ toFake: ['Date'], now })` to pin `now` inside the recorded forecast (see `src/pages/HomePage.test.tsx`).
+
+<!-- /owner: 3.6 -->
 
 <!-- owner: 1.5 -->
 
