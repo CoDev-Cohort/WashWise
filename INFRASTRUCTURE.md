@@ -52,9 +52,15 @@ GET https://api.open-meteo.com/v1/forecast
 
 **How failures surface**: `useForecast` returns `error: ForecastError` with `kind` set to `network`, `timeout`, `http` (with `status`) or `invalid`. The UI reads `kind` to choose a message (P4 designs the final error states). A request cancelled by the caller isn't treated as a failure.
 
-There's no persistent cache yet. Offline support (service worker and runtime caching) arrives in task 4.2.
+Forecasts are also kept on the device so the app works offline: see [Offline & updates](#offline--updates).
 
 <!-- /owner: 1.4 -->
+
+<!-- owner: 4.1 -->
+
+**Failed updates keep the last forecast.** When a refetch fails, including the first fetch for a new ~1 km cell (where TanStack drops `placeholderData`), the home page keeps showing the last forecast that loaded and adds a "Couldn’t update the forecast" banner with "Try again". A failed _first_ load shows a full error with a label per cause (`errorLabel.ts`). Retry, timeout and cache rules are unchanged; "Try again" is `refetch({ cancelRefetch: false })`.
+
+<!-- /owner: 4.1 -->
 
 <!-- owner: 2.1 -->
 
@@ -144,7 +150,7 @@ WashWise is installable (Add to Home Screen) through [`vite-plugin-pwa`](https:/
 
 **Icons** are generated from [`public/logo.svg`](public/logo.svg) with `pnpm pwa:assets` (`@vite-pwa/assets-generator`, minimal-2023 preset, navy background for maskable and Apple icons). ⚠️ The logo is a **placeholder**: Figma has no logo yet. Replace `public/logo.svg` (and `public/favicon.svg`), then re-run `pnpm pwa:assets`.
 
-**Service worker**: until task 4.2, the plugin runs with `selfDestroying: true`. The generated `sw.js` caches nothing, unregisters itself and clears any old caches, so testers never see a stale build. Chrome doesn't need a service worker to install, and iOS never has. **Offline support arrives in task 4.2**, which removes `selfDestroying` and adds precaching and runtime caching for the forecast API.
+**Service worker**: precaches the app shell and asks before switching versions. See [Offline & updates](#offline--updates).
 
 ### Verifying installability
 
@@ -161,14 +167,95 @@ Evidence lives in [`docs/screenshots/pwa/`](docs/screenshots/pwa/).
 
 <!-- /owner: 1.7 -->
 
+<!-- owner: 4.2 -->
+
+## Offline & updates
+
+Two separate pieces make WashWise work offline: the **service worker** keeps the app's own files, and the **persisted query cache** keeps forecasts. The service worker never touches Open-Meteo or BigDataCloud requests, so timeouts, retries and `ForecastError` stay in one place (`api.ts`, `queryClient.ts`).
+
+**App shell** ([`vite.config.ts`](vite.config.ts), Workbox `generateSW`):
+
+| Setting         | Value                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| Precache        | Every built `js, css, html, svg, png, ico, woff2, webmanifest` file (~0.8 MB, fonts and Meteocons too) |
+| Navigation      | `navigateFallback: 'index.html'`, so `/` and `/home` open offline                                      |
+| Runtime caching | None                                                                                                   |
+| Updates         | `registerType: 'prompt'`: a new version waits until the user taps **Reload** in the update toast       |
+| Update checks   | On launch (browser), hourly while open, and when the app returns to the foreground (`useAppUpdate.ts`) |
+| HTTP caching    | `netlify.toml` serves `sw.js`, `index.html` and the manifest with `Cache-Control: no-cache`            |
+
+A dismissed toast comes back on the next check. When every WashWise tab or window is closed, the next launch opens the new version without asking.
+
+**Kill switch.** If a release is broken and users are stuck on it, set `selfDestroying: true` in the `VitePWA` options and deploy. The new `sw.js` unregisters itself and deletes its caches on every device at the next check; the app then runs online-only until the switch is removed.
+
+**Forecasts** ([`cachePersistence.ts`](src/features/forecast/cachePersistence.ts)):
+
+| Setting       | Value                                                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Storage       | `localStorage['ww-forecast-cache']`: TanStack `dehydrate` output for the **3 newest** successful forecasts, plus `FORECAST_CACHE_VERSION` |
+| Restore       | Synchronously, before the first render (`AppProviders`), so a returning user sees the last forecast at once                               |
+| Save          | At most once a second after a forecast loads, and at once when the page is hidden                                                         |
+| Max age       | 7 days (`FORECAST_CACHE_MAX_AGE`, also the `gcTime`): a forecast covers 7 days                                                            |
+| Refresh       | Stale-while-revalidate through `staleTime`: a restored forecast older than 30 min refetches in the background                             |
+| Shape changes | Bump `FORECAST_CACHE_VERSION` when `Forecast` changes; `cachePersistence.test.ts` fails until you do. Older saves are discarded           |
+| Failures      | Blocked or full storage is ignored: the app works, without an offline copy                                                                |
+
+**Offline on the home page** ([`homeViewState.ts`](src/features/home/homeViewState.ts)): "offline" is what the device reports (`useOnline`), never TanStack's fetch status, because TanStack assumes it is online at startup. Offline, the home page shows the forecast for the current cell, or else the newest saved one from anywhere, with a "You’re offline" banner and "Updated X ago". Days that have ended are dropped (`forecastFromToday`); once no saved day covers today, it shows the offline error. TanStack refetches when the connection returns.
+
+**Install prompt** ([`src/features/pwa/`](src/features/pwa/)): on Chromium, the `beforeinstallprompt` event is kept (which also hides Chrome's own install bar) and an in-app "Install WashWise" prompt shows on `/home` from the second visit on. Other storage keys: `ww-visits` (visit count, once per session via `sessionStorage['ww-visit-counted']`) and `ww-install-dismissed` ("Not now", no expiry). Nothing new leaves the device.
+
+**Testing**: `e2e/offline.spec.ts` opens the production build offline (Chromium only: Playwright's WebKit has no service workers; check iPhone by hand). Other e2e specs run with `serviceWorkers: 'block'`. To run e2e in a sandbox whose Chromium differs from Playwright's, pass `launchOptions.executablePath`.
+
+<!-- /owner: 4.2 -->
+
 <!-- owner: P4 -->
 
 ## Hosting & deploy
 
-> TODO (task P4)
+<!-- owner: 4.5 -->
+
+WashWise is a static site on **Netlify**, configured in [`netlify.toml`](netlify.toml) and guarded by [`scripts/netlify-config.test.ts`](scripts/netlify-config.test.ts). HTTPS is required: browsers only allow location on secure pages.
+
+| Branch / event                 | Netlify context | Address                                                            |
+| ------------------------------ | --------------- | ------------------------------------------------------------------ |
+| `main`                         | production      | `https://<site>.netlify.app` (set when the site is created)        |
+| `dev`                          | branch deploy   | `https://dev--<site>.netlify.app` (staging)                        |
+| Pull request to `dev` / `main` | deploy preview  | `https://deploy-preview-<n>--<site>.netlify.app`, posted on the PR |
+
+- **Gate**: nothing is checked by Netlify itself. The [CI checks](#ci-checks) are required before merging into `dev` and `main`, so only checked code reaches staging or production. A failed Netlify build leaves the previous deploy live.
+- **Build**: `corepack enable && pnpm build` with `NODE_VERSION = 24`, so the build matches CI (pnpm comes from `packageManager`). If the build image's install step ever fails on pnpm, set `PNPM_FLAGS = "--frozen-lockfile"` or install in the command (`corepack enable && pnpm install --frozen-lockfile && pnpm build`).
+- **Redirects**: every path serves `index.html` (deep links, unknown paths), except a **missing `/assets/*` file, which is a real 404** (`public/404.html`). Otherwise a page from the previous release asking for a removed script would get HTML and break mid-update.
+- **Caching**: `index.html`, `/`, `sw.js` and `manifest.webmanifest` are `no-cache`, so updates and the [update toast](#offline--updates) reach users; `/assets/*` (fingerprinted) is `immutable`.
+- **Security headers** on every address: HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=()`. No CSP yet (it would need the inline theme script hashed).
+- **Previews and staging** are `noindex` (Netlify adds `X-Robots-Tag`) and are separate sites to the browser: saved location, theme and forecasts don't carry over from production, so testers allow location on each.
+- **Deploy check**: [`deploy-check.yml`](.github/workflows/deploy-check.yml) runs `pnpm deploy:check <url> --preview|--production` after every successful Netlify deploy (HTTPS redirect, deep links, the asset 404, caching, headers, noindex). Run it by hand on any address. It isn't a required check.
+
+**Rollback** (under 5 minutes, no code change): Netlify → the site → **Deploys** → open the last good production deploy → **Publish deploy**. Use **Lock publishing** if you need to stop `main` from auto-publishing while you fix. Then fix forward with a normal PR. A rollback doesn't reach users whose service worker cached the broken release until their next update check; if the worker itself is broken, use the [offline kill switch](#offline--updates).
+
+**Access**: the Netlify team for the site is managed in Netlify (Team settings → Members). Keep at least two maintainers so a rollback never waits on one person. Current maintainers: _to be filled in when the site is created (COH-33 manual step)_.
+
+<!-- /owner: 4.5 -->
 
 ## CI checks
 
-> TODO (task P4)
+<!-- owner: 4.4 -->
+
+GitHub Actions runs every check a contributor runs locally. Workflows live in [`.github/workflows/`](.github/workflows/).
+
+| Workflow                                                                 | When                                                               | What                                                                                                          |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| **CI** ([`ci.yml`](.github/workflows/ci.yml))                            | Every pull request to `dev`/`main`, every push to them, or by hand | Job `checks`: `format:check`, `lint`, `typecheck`, `test`, `build` (one step each). Job `e2e`: below          |
+| **e2e** ([`e2e.yml`](.github/workflows/e2e.yml))                         | Called by CI and Flake check, never on its own                     | `pnpm e2e` on `android-chrome` (Chromium) and `ios-safari` (WebKit) in parallel, against the production build |
+| **Flake check** ([`flake-check.yml`](.github/workflows/flake-check.yml)) | Adding the `flake-check` label to a pull request                   | The e2e job with every test repeated 3 times (`--repeat-each=3`)                                              |
+
+- **Node 24** and pnpm from `packageManager`, with the pnpm store cached. Playwright browsers are cached per version and browser.
+- A newer push to the same branch **cancels** the run in progress.
+- **Retries**: a failed e2e test is retried once on CI (`playwright.config.ts`). One that passes on the retry is marked **flaky** in the report and the PR annotations; treat that as a bug to fix, not a pass.
+- **Reports**: each e2e leg uploads `playwright-report-<project>` (always) and `test-results-<project>` (traces, on failure), kept 14 days. To debug, download the artifact from the run page, unzip it, and run `npx playwright show-report <folder>`, or `npx playwright show-trace <trace.zip>`.
+- **Manual run**: Actions → CI → Run workflow, with "Run every e2e test this many times". This is only available once the workflows are on the default branch; before that, use the `flake-check` label.
+- **Required checks** (a repo admin sets these in branch protection for `dev` and `main`): `checks`, `e2e / android-chrome`, `e2e / ios-safari`. The Flake check jobs have their own names, so labels never cancel or stand in for these.
+- **Deploy** (task 4.5, COH-33) can rely on the same checks being green instead of running its own lint and tests.
+
+<!-- /owner: 4.4 -->
 
 <!-- /owner: P4 -->

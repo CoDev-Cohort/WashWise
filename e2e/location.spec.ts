@@ -1,34 +1,10 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { LOCATION_ALLOWED, seedSavedLocation, stubExternalServices } from './support'
 
 const START = { name: 'Use my location' }
 const HOME = { name: 'Should you wash?' }
 
-test.describe('first visit, then allowing location', () => {
-  test.use(LOCATION_ALLOWED)
-
-  test('landing → "Use my location" → /home, and later visits skip the landing page', async ({
-    page,
-  }) => {
-    await stubExternalServices(page)
-
-    await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'WashWise' })).toBeVisible()
-    await page.getByRole('button', START).click()
-    await expect(page).toHaveURL(/\/home$/)
-    await expect(page.getByRole('heading', HOME)).toBeVisible()
-
-    // Reloading /home stays on /home.
-    await page.reload()
-    await expect(page).toHaveURL(/\/home$/)
-    await expect(page.getByRole('heading', HOME)).toBeVisible()
-
-    // Opening the app at / goes straight to /home: the landing page never shows.
-    await page.goto('/')
-    await expect(page).toHaveURL(/\/home$/)
-    await expect(page.getByRole('button', START)).toHaveCount(0)
-  })
-})
+// The first-visit flow (landing → allow → /home) is in permission-flows.spec.ts.
 
 test.describe('location allowed and a position saved', () => {
   test.use(LOCATION_ALLOWED)

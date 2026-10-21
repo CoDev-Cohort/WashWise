@@ -10,7 +10,11 @@ interface OtherDaysListProps {
 export function OtherDaysList({ rows }: OtherDaysListProps) {
   if (rows.length === 0) return null
   return (
-    <section aria-labelledby="other-days-title" className="flex flex-col gap-3">
+    <section
+      data-section="otherDays"
+      aria-labelledby="other-days-title"
+      className="flex flex-col gap-3"
+    >
       <h2 id="other-days-title" className="font-section text-section text-ink-section uppercase">
         Other days
       </h2>

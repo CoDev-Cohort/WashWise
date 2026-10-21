@@ -1,0 +1,50 @@
+# Every check a contributor runs locally, on every pull request and push to dev/main (P4.4, COH-32).
+# Required checks for branch protection: `checks`, `e2e / android-chrome`, `e2e / ios-safari`.
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+    inputs:
+      repeat_each:
+        description: Run every e2e test this many times (flake check)
+        type: number
+        default: 1
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format
+        run: pnpm format:check
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Unit tests
+        run: pnpm test
+      - name: Build
+        run: pnpm build
+
+  e2e:
+    uses: ./.github/workflows/e2e.yml
+    with:
+      repeat_each: ${{ inputs.repeat_each || 1 }}

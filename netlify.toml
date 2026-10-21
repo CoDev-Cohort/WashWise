@@ -1,0 +1,63 @@
+# Netlify hosting for WashWise (P4.5, COH-33). `main` → production, `dev` → branch deploy (staging),
+# pull requests → deploy previews. CI (.github/workflows/ci.yml) is the gate: its checks are required
+# before merging into `dev` or `main`. `scripts/netlify-config.test.ts` guards this file.
+
+[build]
+  # Same build as CI. Corepack gives the pnpm version pinned in package.json (`packageManager`).
+  command = "corepack enable && pnpm build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+  COREPACK_ENABLE_STRICT = "0"
+
+# A missing fingerprinted file must be a real 404. Without this rule the app fallback below would
+# answer an old page's request for a removed script with index.html, which breaks that page mid-update.
+[[redirects]]
+  from = "/assets/*"
+  to = "/404.html"
+  status = 404
+
+# Every app path (/home, unknown paths) loads the app; files that exist are served first (FR-002).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Files that decide which version runs are always revalidated, so updates reach users (FR-003, 4.2).
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "no-cache"
+    Content-Type = "application/manifest+json"
+
+# Vite fingerprints everything in /assets, so it can be cached for good.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Security headers on every address (FR-013). Location is allowed for this site only.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(self), camera=(), microphone=(), payment=()"

@@ -1,15 +1,22 @@
-const BLOCK = 'animate-pulse rounded-xl bg-surface-muted motion-reduce:animate-none'
+import { DayStripSkeleton } from './DayStripSkeleton'
+import { OtherDaysSkeleton } from './OtherDaysSkeleton'
+import { RainChartSkeleton } from './RainChartSkeleton'
+import { VerdictCardSkeleton } from './VerdictCardSkeleton'
 
-/** Placeholders for the day strip, cards and chart while the first forecast loads (FR-013). */
+/**
+ * Every section's placeholder, in page order, while the first forecast loads (spec FR-001 – FR-003).
+ * One status for the whole page; the placeholders themselves are hidden from assistive technology.
+ */
 export function HomeSkeleton() {
   return (
     <div role="status" aria-label="Loading forecast" className="flex flex-col gap-6">
-      <div className={`h-20 ${BLOCK}`} />
+      <DayStripSkeleton />
       <div className="flex flex-col gap-card-gap">
-        <div className={`h-40 ${BLOCK}`} />
-        <div className={`h-40 ${BLOCK}`} />
+        <VerdictCardSkeleton activity="laundry" />
+        <VerdictCardSkeleton activity="carWash" />
       </div>
-      <div className={`h-40 ${BLOCK}`} />
+      <RainChartSkeleton />
+      <OtherDaysSkeleton />
     </div>
   )
 }

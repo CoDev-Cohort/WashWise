@@ -16,7 +16,7 @@ interface RainChartProps {
 /** Hourly rain-chance bars with a text alternative that lists every hour (FR-005, FR-006). */
 export function RainChart({ bars }: RainChartProps) {
   return (
-    <section aria-labelledby="rain-chart-title" className="flex flex-col gap-3">
+    <section data-section="rain" aria-labelledby="rain-chart-title" className="flex flex-col gap-3">
       <h2 id="rain-chart-title" className="font-section text-section text-ink-section uppercase">
         Rain chance
       </h2>
@@ -34,10 +34,10 @@ export function RainChart({ bars }: RainChartProps) {
                 <span className="font-metric text-metric text-ink-strong">
                   {bar.percent === null ? '—' : `${Math.round(bar.percent)}%`}
                 </span>
-                <span className="flex h-24 w-full items-end rounded-md bg-surface-muted">
+                <span className="flex h-24 w-full items-end rounded-md bg-surface-muted forced-colors:border forced-colors:border-[CanvasText]">
                   {bar.percent !== null && (
                     <span
-                      className={`w-full rounded-md ${barColor(bar.percent)}`}
+                      className={`w-full rounded-md ${barColor(bar.percent)} forced-colors:bg-[CanvasText] forced-colors:forced-color-adjust-none`}
                       style={{ height: `${Math.max(4, Math.min(100, bar.percent))}%` }}
                     />
                   )}

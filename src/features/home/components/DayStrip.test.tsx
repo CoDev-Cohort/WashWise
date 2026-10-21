@@ -22,25 +22,33 @@ function Harness({ onSelect = () => {} }: { onSelect?: (index: number) => void }
   )
 }
 
+// Day names come from the visible text plus a hidden ", ". jsdom drops the space browsers keep
+// between the two spans, hence `,\s?`.
 describe('DayStrip', () => {
   it('shows six days with Today selected first', () => {
     render(<Harness />)
     const buttons = screen.getAllByRole('button')
     expect(buttons).toHaveLength(6)
-    expect(screen.getByRole('button', { name: 'Today, 21' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /^Today,\s?21$/ })).toHaveAttribute(
       'aria-pressed',
       'true',
     )
-    expect(screen.getByRole('button', { name: 'THU, 22' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: /^THU,\s?22$/ })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
   })
 
   it('selects a day on click and marks only that one', async () => {
     const onSelect = vi.fn()
     render(<Harness onSelect={onSelect} />)
-    await userEvent.click(screen.getByRole('button', { name: 'SAT, 24' }))
+    await userEvent.click(screen.getByRole('button', { name: /^SAT,\s?24$/ }))
     expect(onSelect).toHaveBeenCalledWith(3)
-    expect(screen.getByRole('button', { name: 'SAT, 24' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Today, 21' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /^SAT,\s?24$/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: /^Today,\s?21$/ })).toHaveAttribute(
       'aria-pressed',
       'false',
     )
@@ -51,14 +59,17 @@ describe('DayStrip', () => {
     render(<Harness onSelect={onSelect} />)
     await userEvent.tab()
     for (let i = 0; i < 5; i++) await userEvent.tab()
-    expect(screen.getByRole('button', { name: 'MON, 26' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: /^MON,\s?26$/ })).toHaveFocus()
 
     await userEvent.keyboard('{Enter}')
     expect(onSelect).toHaveBeenLastCalledWith(5)
     await userEvent.tab({ shift: true })
     await userEvent.keyboard(' ')
     expect(onSelect).toHaveBeenLastCalledWith(4)
-    expect(screen.getByRole('button', { name: 'SUN, 25' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /^SUN,\s?25$/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
   })
 
   it('hides the decorative weather icons from assistive technology', () => {

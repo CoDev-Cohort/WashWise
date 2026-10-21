@@ -116,12 +116,33 @@ describe('fetchForecast', () => {
   })
 
   it('passes a caller abort during the body read through', async () => {
-    server.use(http.get(FORECAST_ENDPOINT, () => stalledBody()))
+    // A stubbed fetch, not MSW: aborting an MSW-mocked body mid-stream can crash undici's socket
+    // handling on CI runners (Node 24), which surfaced as a network error and made this test flaky.
+    // This body behaves like a real one: it stalls, then errors with the abort reason.
+    vi.stubGlobal('fetch', (_url: string, init?: RequestInit) => {
+      const body = new ReadableStream<Uint8Array>({
+        start(stream) {
+          stream.enqueue(new TextEncoder().encode('{"latitude":'))
+          init?.signal?.addEventListener('abort', () => stream.error(init.signal!.reason))
+        },
+      })
+      return Promise.resolve(
+        new Response(body, { headers: { 'Content-Type': 'application/json' } }),
+      )
+    })
     const controller = new AbortController()
-    const pending = fetchForecast(0, 0, { signal: controller.signal })
-    setTimeout(() => controller.abort(), 50)
-    const err = await pending.catch((e: unknown) => e)
+    // Abort the moment the body read starts, so the abort lands in the body-read path.
+    const json = Response.prototype.json
+    vi.spyOn(Response.prototype, 'json').mockImplementation(function (this: Response) {
+      const reading = json.call(this)
+      controller.abort()
+      return reading
+    })
+    const err = await fetchForecast(0, 0, { signal: controller.signal })
+      .catch((e: unknown) => e)
+      .finally(() => vi.unstubAllGlobals())
     expect(err).not.toBeInstanceOf(ForecastError)
+    expect((err as Error).name).toBe('AbortError')
   })
 
   describe('default timeout', () => {

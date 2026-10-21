@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 interface ManifestIcon {
   src: string
@@ -51,4 +51,27 @@ test('iOS home-screen tags are present', async ({ page }) => {
     'content',
     'yes',
   )
+})
+
+test.describe('service worker', () => {
+  test.use({ serviceWorkers: 'allow' })
+  test.skip(
+    ({ browserName }) => browserName !== 'chromium',
+    'Playwright’s WebKit has no service workers',
+  )
+
+  test('registers and precaches the app shell', async ({ page }) => {
+    await page.goto('/')
+    const cached = await page.evaluate(async () => {
+      await navigator.serviceWorker.ready
+      const urls: string[] = []
+      for (const name of await caches.keys()) {
+        const cache = await caches.open(name)
+        urls.push(...(await cache.keys()).map((request) => new URL(request.url).pathname))
+      }
+      return urls
+    })
+    expect(cached).toContain('/index.html')
+    expect(cached.some((url) => url.endsWith('.js'))).toBe(true)
+  })
 })

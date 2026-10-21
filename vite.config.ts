@@ -11,11 +11,18 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      // Until task 4.2 the service worker caches nothing and unregisters itself,
-      // so testers never get a stale build. The manifest and icons still ship (installable).
-      selfDestroying: true,
-      registerType: 'autoUpdate',
+      // Precaches the app shell so every route opens offline. A new version waits until the user
+      // taps "Reload" in the update toast (`registerType: 'prompt'`); `PwaPrompts` registers it.
+      // Kill switch for a broken release: re-deploy with `selfDestroying: true` (INFRASTRUCTURE.md).
+      registerType: 'prompt',
+      injectRegister: false,
       devOptions: { enabled: false },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,webmanifest}'],
+        navigateFallback: 'index.html',
+        cleanupOutdatedCaches: true,
+        // Forecast and place-name requests are not intercepted: forecasts persist in the query cache.
+      },
       includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: 'WashWise',

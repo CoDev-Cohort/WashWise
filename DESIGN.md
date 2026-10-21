@@ -34,7 +34,7 @@ Tokens are CSS variables in [`src/styles/tokens.css`](src/styles/tokens.css) (`-
 | `ink-section`       | `#4E6A8A`                                         | Section titles                                                                        |
 | `on-ink`            | `#FFFFFF`                                         | Text on `ink` backgrounds                                                             |
 | `accent`            | `#336FAD` ⚠️                                      | Other Days status text ("Yes"/"Wait"). Figma `#3A7BBE` is 4.41:1, darkened to pass AA |
-| `accent-alt`        | `#3E86C6`                                         | Other Days icon stroke                                                                |
+| `accent-alt`        | `#2E78B8`                                         | Other Days "Maybe" (text and icon). Darkened from `#3E86C6` in P4.3 for 4.5:1         |
 | `rain-1` … `rain-5` | `#9BCFEC` `#74B5E2` `#5FA1D5` `#4473A3` `#1F335C` | Rain bars, low → high chance                                                          |
 
 **Verdict colors**: each verdict has the same five roles.
@@ -171,7 +171,7 @@ Built from the existing tokens only. The page is [`src/pages/HomePage.tsx`](src/
 | Verdict cards     | `VerdictCard`                     | `rounded-xl border`, `gap-card-gap`; per verdict `-bg` / `-border` / `-text` / `-pill`; word `font-verdict`, sub-label `font-sublabel`  |
 | Rain chance       | `RainChart`                       | title `font-section text-ink-section`; bar `rain-1…5` by chance on `bg-surface-muted`; `%` `font-metric`, hour `font-body`              |
 | Other days        | `OtherDaysList`, `OtherDayMarker` | row `border-border bg-surface rounded-lg`; Yes `text-accent`, Maybe `text-accent-alt`, Wait `text-ink-strong`, "—" `text-ink-muted`     |
-| Loading / failure | `HomeSkeleton`, `HomeError`       | skeleton `bg-surface-muted` (pulse stops under reduced motion); error is an `alert` with the primary button                             |
+| Loading / failure | `HomeSkeleton`, `StatusNotice`    | see [Loading and error states](#loading-and-error-states)                                                                               |
 
 - **Rain bar colors** (chance → token): < 20 `rain-1`, < 40 `rain-2`, < 60 `rain-3`, < 80 `rain-4`, otherwise `rain-5`. The dark palette flips the scale so a higher chance is lighter.
 - **Cards**: green, amber and red come from the verdict; an unavailable verdict uses `bg-surface-muted` and "Verdict unavailable". Weather pills hold the drying time ("Dries in ~2.5 hrs", "Dries tomorrow") and the condition with a decorative static icon.
@@ -182,6 +182,61 @@ Built from the existing tokens only. The page is [`src/pages/HomePage.tsx`](src/
 - **To check against Figma**: the Figma export was not inspected in code, so section spacing (`gap-6`), the chart's bar height (`h-24`) and the Other Days row layout (both activities per row) are approximations. They are verified by the human tasks T013, T018, T021 and T028.
 
 <!-- /owner: 3.6 -->
+
+<!-- owner: 4.1 -->
+
+## Loading and error states
+
+**Skeletons** have the same frame as the section they stand in for, so nothing moves when the forecast arrives (no layout shift at 393 and 430 px, in both themes).
+
+- Each placeholder line uses the real text's font token (`font-verdict text-verdict`, `font-day text-day`…) holding a non-breaking space, so it takes exactly that line height. Fill: `bg-surface-muted`, `rounded-sm`, `animate-pulse` (none under reduced motion).
+- Section frames are copied as is: strip cells `rounded-lg border-border bg-surface`, cards `rounded-xl border-border bg-surface p-4` with the real activity icon and title, chart bars `h-24 rounded-md`, Other Days rows as in the list. Section headings ("Rain chance", "Other days") show for real.
+- The header and the "Should you wash?" title are never skeletons.
+
+**Errors** use one pattern: one `CircleAlert` icon (decorative), one label, a short hint, and "Try again" (`RotateCcw`).
+
+| Variant  | Where                                 | Look                                                                                                                                                |
+| -------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `block`  | in place of the sections (first load) | centered; icon 40 `text-ink-muted`; label `font-title text-title text-ink`; hint `font-body text-ink-muted`; button `bg-ink text-on-ink rounded-lg` |
+| `banner` | between the title and the day strip   | one row, `rounded-lg border-border bg-surface`; icon 20; label `font-status`; hint `font-caption text-ink-muted`; outline button                    |
+
+- Labels name the cause: "You’re offline", "The forecast is taking too long", "The forecast service is having trouble", "We couldn’t load the forecast". The banner says "Couldn’t update the forecast" and its hint gives the cause, or that the forecast is for your previous location.
+- While retrying, the banner button reads "Retrying…", is disabled (`opacity-60`) and its icon spins (`motion-safe` only).
+- The place-name pill has no error state: it shows "Your location".
+- No new tokens were needed.
+
+<!-- /owner: 4.1 -->
+
+<!-- owner: 4.2 -->
+
+## Offline, update and install prompts
+
+Figma has no frames for these; they reuse existing tokens only.
+
+- **Offline / stale banner**: the P4.1 `StatusNotice` banner. Offline it reads "You’re offline" with "Showing the last forecast that loaded." A third line, "Updated X ago" (`font-caption text-caption text-ink-muted`), sits outside the live region so it can tick every minute without being re-announced.
+- **Bottom prompt slot** (`PwaPrompts`): fixed to the bottom of the ≤ 430 px column, inside the gutter, above the safe-area inset. A spacer of the same height lets the page scroll clear of it. One prompt at a time; the update toast wins.
+- **Prompt card** (`promptStyles.ts`): inverted card, `bg-ink text-on-ink rounded-lg shadow-lg`, a decorative 20 px Lucide icon, `font-status` label. Primary action `bg-on-ink text-ink`, secondary action underlined `text-on-ink`; both at least 44 px tall. Inverting `ink`/`on-ink` keeps it legible in dark mode with no new tokens.
+- **Update toast**: "A new version is available" · Dismiss · **Reload**.
+- **Install prompt**: "Install WashWise" / "Open it from your home screen, even offline." · Not now · **Install**.
+
+<!-- /owner: 4.2 -->
+
+<!-- owner: 4.3 -->
+
+## Accessibility
+
+Target: **WCAG 2.2 level AA** on landing and home, in light and dark. Checked by axe in `pnpm e2e` (see CLAUDE.md), plus the token test in `src/styles/contrast.test.ts`.
+
+- **Focus ring**: every interactive element uses the `focus-ring` utility (`src/styles/index.css`): a 2 px `accent` outline, 2 px off the element, keyboard focus only. On `bg-ink` surfaces (prompt card) use `focus-ring-inverse` (`on-ink`). Both are ≥ 3:1 next to every surface they sit on (table above). Never hand-write `focus-visible:outline-*`.
+- **Targets**: every button and link is at least 24 × 24 px, at 320 px wide too. The theme toggle is `size-8 shrink-0` so the header can't squeeze it.
+- **Disabled while busy**: buttons that are busy (location pill, "Retrying…") use `aria-disabled`, not `disabled`, so keyboard focus stays on them. They dim with `aria-disabled:opacity-60`, which still reads at ≥ 3:1.
+- **Reflow (320 px / 200% zoom)**: the header wraps the pill and toggle under the wordmark when they don't fit, and the day strip becomes two rows of three below 360 px. Nothing scrolls sideways or is clipped. Screenshots: [`docs/screenshots/a11y/`](docs/screenshots/a11y/).
+- **Forced colors** (Windows high contrast): system colors are allowed only in `forced-colors:` variants. Rain bars use `CanvasText` (with `forced-color-adjust-none`), the selected day gets a 4 px `Highlight` border, and the focus ring turns `Highlight`.
+- **Color is never alone**: verdicts, markers and the selected day always have a word, an icon or a border change next to the color.
+- **Names**: the visible text is the accessible name (day buttons read "Today, 21" from their own text plus a hidden comma), so voice control can say what it sees.
+- **Page titles**: "WashWise — Allow location" and "WashWise — Should you wash?". After an in-app page change, focus moves to the page's `h1`.
+
+<!-- /owner: 4.3 -->
 
 <!-- owner: 1.8 -->
 
@@ -204,7 +259,7 @@ Figma has no dark design, so every token's dark value was **derived** from the l
 | `ink-section`                                         | `#4E6A8A`                                         | `#9FB5D1`                                         |
 | `on-ink`                                              | `#FFFFFF`                                         | `#0E1729`                                         |
 | `accent`                                              | `#336FAD`                                         | `#84B6E8`                                         |
-| `accent-alt`                                          | `#3E86C6`                                         | `#6FA8DD`                                         |
+| `accent-alt`                                          | `#2E78B8`                                         | `#6FA8DD`                                         |
 | `rain-1` … `rain-5`                                   | `#9BCFEC` `#74B5E2` `#5FA1D5` `#4473A3` `#1F335C` | `#2F5878` `#3F77A3` `#5A97CB` `#8BBDE6` `#CFE5F6` |
 | `go-bg` / `-border` / `-text` / `-pill` / `-dot`      | `#D9F2EC` `#62D280` `#07695C` `#CBE3DE` `#2F9E4F` | `#0F3A33` `#2E8B5A` `#84E3B6` `#17493F` `#4CC77A` |
 | `caution-bg` / `-border` / `-text` / `-pill` / `-dot` | `#F5EBD3` `#F2C46B` `#8A5A00` `#E8DCC0` `#B07800` | `#3B2E12` `#B8892B` `#F2C66F` `#4A3A19` `#E0A73A` |
@@ -214,26 +269,27 @@ Figma has no dark design, so every token's dark value was **derived** from the l
 
 Checked automatically by [`src/styles/contrast.test.ts`](src/styles/contrast.test.ts). The test parses `tokens.css`, so adding or changing a token re-runs these checks. Minimum 4.5:1 for normal text; 3:1 for color-only indicators.
 
-| Pair                                                | Min | Light                | Dark                  |
-| --------------------------------------------------- | --- | -------------------- | --------------------- |
-| `ink` on `bg`                                       | 4.5 | 12.45                | 15.07                 |
-| `ink` on `surface`                                  | 4.5 | 12.45                | 13.35                 |
-| `ink-strong` on `bg`                                | 4.5 | 13.25                | 16.52                 |
-| `ink-strong` on `surface-muted`                     | 4.5 | 12.21                | 13.04                 |
-| `ink-muted` on `bg`                                 | 4.5 | 5.46                 | 8.42                  |
-| `ink-muted` on `surface`                            | 4.5 | 5.46                 | 7.46                  |
-| `ink-section` on `bg`                               | 4.5 | 5.60                 | 8.53                  |
-| `accent` on `bg`                                    | 4.5 | 5.23                 | 8.38                  |
-| `on-ink` on `ink`                                   | 4.5 | 12.45                | 15.07                 |
-| `go-text` on `go-bg`                                | 4.5 | 5.61                 | 8.15                  |
-| `caution-text` on `caution-bg`                      | 4.5 | 5.00                 | 8.25                  |
-| `notyet-text` on `notyet-bg`                        | 4.5 | 4.99                 | 7.92                  |
-| `ink` on `go-bg` / `caution-bg` / `notyet-bg`       | 4.5 | 10.59 / 10.50 / 9.31 | 10.57 / 11.15 / 12.67 |
-| `ink` on `go-pill` / `caution-pill` / `notyet-pill` | 4.5 | 9.24 / 9.15 / 8.11   | 8.58 / 9.26 / 10.79   |
-| `go-dot` on `bg`                                    | 3   | 3.43                 | 8.32                  |
-| `caution-dot` on `bg`                               | 3   | 3.80                 | 8.32                  |
-| `notyet-dot` on `bg`                                | 3   | 3.96                 | 6.12                  |
-| `accent-alt` on `bg`                                | 3   | 3.87                 | 7.09                  |
+| Pair                                                 | Min | Light                | Dark                  |
+| ---------------------------------------------------- | --- | -------------------- | --------------------- |
+| `ink` on `bg`                                        | 4.5 | 12.45                | 15.07                 |
+| `ink` on `surface`                                   | 4.5 | 12.45                | 13.35                 |
+| `ink-strong` on `bg`                                 | 4.5 | 13.25                | 16.52                 |
+| `ink-strong` on `surface-muted`                      | 4.5 | 12.21                | 13.04                 |
+| `ink-muted` on `bg`                                  | 4.5 | 5.46                 | 8.42                  |
+| `ink-muted` on `surface`                             | 4.5 | 5.46                 | 7.46                  |
+| `ink-section` on `bg`                                | 4.5 | 5.60                 | 8.53                  |
+| `accent` on `bg`                                     | 4.5 | 5.23                 | 8.38                  |
+| `on-ink` on `ink`                                    | 4.5 | 12.45                | 15.07                 |
+| `go-text` on `go-bg`                                 | 4.5 | 5.61                 | 8.15                  |
+| `caution-text` on `caution-bg`                       | 4.5 | 5.00                 | 8.25                  |
+| `notyet-text` on `notyet-bg`                         | 4.5 | 4.99                 | 7.92                  |
+| `ink` on `go-bg` / `caution-bg` / `notyet-bg`        | 4.5 | 10.59 / 10.50 / 9.31 | 10.57 / 11.15 / 12.67 |
+| `ink` on `go-pill` / `caution-pill` / `notyet-pill`  | 4.5 | 9.24 / 9.15 / 8.11   | 8.58 / 9.26 / 10.79   |
+| `go-dot` on `bg`                                     | 3   | 3.43                 | 8.32                  |
+| `caution-dot` on `bg`                                | 3   | 3.80                 | 8.32                  |
+| `notyet-dot` on `bg`                                 | 3   | 3.96                 | 6.12                  |
+| `accent-alt` on `bg` / `surface` ("Maybe" text)      | 4.5 | 4.67 / 4.67          | 7.09 / 6.28           |
+| `accent` on `surface` / `surface-muted` (focus ring) | 3   | 5.23 / 4.82          | 7.43 / 6.62           |
 
 **Not checked**: `border`, the `-border` tokens and the rain bars against their track. These are decorative boundaries, or always sit next to a text label (the % above each bar), so WCAG 1.4.11 doesn't require 3:1.
 

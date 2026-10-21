@@ -47,6 +47,7 @@ export function VerdictCard({ activity, result, pills }: VerdictCardProps) {
 
   return (
     <article
+      data-section={activity}
       aria-labelledby={titleId}
       className={`flex flex-col gap-3 rounded-xl border p-4 ${style.card}`}
     >

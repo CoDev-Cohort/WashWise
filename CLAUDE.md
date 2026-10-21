@@ -129,7 +129,7 @@ main.tsx
 
   To test it, render a component that throws inside `AppErrorBoundary`, or inside a memory router whose layout has `errorElement: <RouteErrorFallback />`. Silence the expected `console.error` with `vi.spyOn`.
 
-- **Deep links**: `vercel.json` rewrites every path to `index.html` so `/home` works on reload. `vite preview` already does this locally.
+- **Deep links**: `netlify.toml` rewrites every path to `index.html` so `/home` works on reload (missing `/assets/*` files are real 404s). `vite preview` already does the rewrite locally. Hosting: [INFRASTRUCTURE.md](INFRASTRUCTURE.md#hosting--deploy).
 
 <!-- /owner: 1.3 -->
 
@@ -199,19 +199,76 @@ HomePage
 ├─ VerdictCards      Laundry + Car Wash for the selected day
 ├─ RainChart         5 hourly bars (+ screen-reader list)
 ├─ OtherDaysList     the strip's days after Today, Laundry + Car Wash markers
-└─ HomeSkeleton / HomeError   while the first forecast loads / when it fails
+└─ HomeSkeleton / StatusNotice   while the first forecast loads / when it fails (see Loading and error states)
 ```
 
 - **One selected day drives the cards and the chart.** `selectedDay` is an index into `Forecast.daily`. Today (index 0) uses the "from now" engine (`computeLaundryVerdict`, `computeCarWashVerdict`), which can move laundry to tomorrow late in the day. Other days use `computeDayVerdicts`, the same results as Other Days.
 - **Pure helpers take `now`** and are tested table-driven: `buildDayStrip`, `getRainBars` (Today = 5 hours from the current one, rolling into the next day; other days = 12–4 PM), `getCardContent`, `buildOtherDays`. Day names and dates come from `DailyPoint.date` and `Forecast.utcOffsetSeconds`, never the device's time zone. `HomePage` gets the time from `useNow()` (re-renders each minute).
 - **Location pill**: `useLocationRefresh()` (in `useCoordinates.ts`) calls the same `request()` that `RequireLocation` owns, shared through the router outlet context `{ coordinates, request, status }`, then invalidates the forecast for the new position. One refresh at a time; a failed one keeps the old position and forecast.
 - **Theme**: `src/features/theme/`. `useTheme()` returns `{ theme, toggle }`; only `themeStorage.ts` touches `localStorage` (`ww-theme`, `'light' | 'dark'`, absent = follow the system). An inline script in `index.html` sets the `dark` class before first paint; `themeStorage.test.ts` fails if it drifts from `resolveTheme`. Never read the theme from a component directly.
-- **States**: first load shows `HomeSkeleton`; a failed first load shows `HomeError` ("Try again" refetches). Once data exists, background failures never replace it.
+- **States**: see [Loading and error states](#loading-and-error-states) (P4).
 - **Tests that render `HomePage`** need MSW handlers for both the forecast and the geocoder, and `vi.useFakeTimers({ toFake: ['Date'], now })` to pin `now` inside the recorded forecast (see `src/pages/HomePage.test.tsx`).
 
 <!-- /owner: 3.6 -->
 
+<!-- owner: 4.1 -->
+
+## Loading and error states
+
+- **`HomePage` switches on one state**: `useHomeForecast(coords)` ([`src/features/home/useHomeForecast.ts`](src/features/home/useHomeForecast.ts)) wraps `useForecast` and returns `{ view, copy, shownCoords, isFetching, retry }`. `view` comes from the pure `getHomeViewState` ([`homeViewState.ts`](src/features/home/homeViewState.ts)): `loading` → `HomeSkeleton`, `error` → `StatusNotice variant="block"`, `ready` → the sections, plus `StatusNotice variant="banner"` when `stale`.
+- **Once a forecast has loaded it never leaves the screen.** The hook keeps the last real result (`lastGood`) because TanStack drops `placeholderData` when the query for a new cell fails. A failed update marks the view `stale`; `previousLocation` says the forecast is for an earlier cell, and `shownCoords` then points the pill's `useCityName` at that cell, so the pill and the forecast always agree.
+- **One error pattern**: [`StatusNotice`](src/components/feedback/StatusNotice.tsx): one decorative `CircleAlert`, one label, a hint, "Try again". `block` is an `alert`; `banner` is a polite `status` with "Retrying…" (disabled) while `isFetching`. `retry` is `refetch({ cancelRefetch: false })`, so repeated presses join the running request.
+- **Error wording lives only in [`errorLabel.ts`](src/features/forecast/errorLabel.ts)**: `network` or the device offline (`useOnline()`) → "You’re offline", `timeout` → "The forecast is taking too long", `http` ≥ 500 → "The forecast service is having trouble", anything else → "We couldn’t load the forecast". Extend it there (4.2 offline work included); never write error copy in a component.
+- **Skeletons** (`DayStripSkeleton`, `VerdictCardSkeleton`, `RainChartSkeleton`, `OtherDaysSkeleton`, composed by `HomeSkeleton`) copy their section's frame and use the section's font tokens with a non-breaking space (`BONE` in `skeleton.ts`). If you change a section's padding, gap, type or fixed height, change its skeleton too: `e2e/home-states.spec.ts` compares every `[data-section]` box before and after the forecast arrives, for every recorded fixture at 393 and 430 px in both themes.
+- **The place name stays a silent fallback**: no error state for BigDataCloud.
+- **Tests**: `getHomeViewState` and `errorLabel` are table-driven; page tests cover each cause, retry, the banner and the previous-location case. In e2e, `holdForecast(page)` (in `e2e/support.ts`) holds Open-Meteo until `release(response)` or `fail()`.
+
+<!-- /owner: 4.1 -->
+
 <!-- owner: 1.5 -->
+
+<!-- owner: 4.2 -->
+
+## Offline and PWA
+
+- **Forecasts persist under the QueryClient**, not in components: [`cachePersistence.ts`](src/features/forecast/cachePersistence.ts) restores them in `AppProviders` before the first render and saves the 3 newest. Components still read `useForecast` / `useHomeForecast`. Changing the `Forecast` shape? Bump `FORECAST_CACHE_VERSION` (a test fails until you do).
+- **Offline is `useOnline()`**, passed to `getHomeViewState` with `now`. Stale `ready` states carry `reason: 'offline' | 'failed'`. `forecastFromToday(forecast, now)` drops ended days, so a restored forecast starts at the real today.
+- **`PwaPrompts`** (in `MobileColumn`) is the one bottom slot: the update toast (`useAppUpdate`, registers the service worker) wins over the install prompt (`useInstallPrompt`, `/home` only, from the second visit).
+- Storage: only `cachePersistence.ts` touches `ww-forecast-cache`; only `installStorage.ts` touches `ww-visits`, `ww-visit-counted`, `ww-install-dismissed`.
+- **Tests**: mock the service worker with `vi.mock('virtual:pwa-register/react', () => import('@/test/pwaRegister'))` and drive it with `pwaRegister`. Fake install offers come from `offerInstall()` in [`src/test/installPrompt.ts`](src/test/installPrompt.ts). For offline page tests, stub `navigator.onLine`, dispatch `offline`, and make MSW fail too (TanStack only hears the event once mounted). Reset `onlineManager.setOnline(true)` after.
+- Details: [INFRASTRUCTURE.md](INFRASTRUCTURE.md#offline--updates).
+
+<!-- /owner: 4.2 -->
+
+<!-- owner: 4.3 -->
+
+## Accessibility
+
+- Target WCAG 2.2 AA. Design rules (focus ring, targets, forced colors, reflow) are in [DESIGN.md](DESIGN.md#accessibility).
+- Every interactive element gets the `focus-ring` utility (`focus-ring-inverse` on `bg-ink`). Busy buttons use `aria-disabled`, never `disabled`, so focus isn't lost.
+- Pages set their title with `usePageTitle(...)` ([`src/lib/usePageTitle.ts`](src/lib/usePageTitle.ts)). `useRouteFocus()` in `MobileColumn` focuses `main h1` (`tabIndex={-1}`) after an in-app page change, never on first load.
+- **Automated checks** run with `pnpm e2e`:
+  - `e2e/a11y.spec.ts`: axe (WCAG 2.2 AA tags plus landmark/heading rules) over every state in [`e2e/a11y/states.ts`](e2e/a11y/states.ts), light and dark. Serious/critical findings fail; moderate/minor are logged as `[axe]`. **Add a state there** when you add a screen or a message.
+  - `e2e/keyboard.spec.ts`: Tab order matches DOM order, every stop has a ring, focus stays put after actions (Chromium only).
+  - `e2e/layout-a11y.spec.ts`: 24 px targets, 320 px reflow (no overflow, nothing clipped), forced colors, reduced motion, focus not hidden by the bottom prompt.
+- States e2e can't reach (update toast, crash screen) use `expectNoSeriousViolations(container)` from [`src/test/axe.ts`](src/test/axe.ts) in their component tests.
+- e2e landing states come from `stubGeolocation(page, outcome)` in `e2e/support.ts`; themes from `setTheme(page, theme)`.
+- Screen-reader walkthrough (by hand, before release): [`docs/a11y/screen-reader-walkthrough.md`](docs/a11y/screen-reader-walkthrough.md).
+
+<!-- /owner: 4.3 -->
+
+<!-- owner: 4.4 -->
+
+## End-to-end tests
+
+- Specs import **`{ test, expect }` from `./fixtures`**, never from `@playwright/test` (ESLint enforces it). The fixture **fails any test that makes an external request it didn't stub** and names the URL, so stub every service the page calls: `stubExternalServices(page)` (place names; forecast refused), `stubForecast(page)` (recorded Manila forecast and a pinned clock), or your own `page.route`.
+- **Location** comes from `fakeLocation(page, { permission, answer })` in `e2e/support.ts`. It returns `{ permission(state), answer(next) }`, so a test can refuse, then allow, or revoke while the page is open; it fires the permission `change` event the app listens to. `stubGeolocation(page, outcome)` is the preset for one landing state. Don't mix it with `LOCATION_ALLOWED` (Playwright's own geolocation), which is fine for specs that only need "granted".
+- **Pin the clock** (`page.clock.setFixedTime`) inside the recorded forecast whenever verdicts or hours are checked.
+- Flow specs: `permission-flows`, `day-switching` (expected verdicts come from the real engine via a relative import), `theme`. Page checks: `home`, `location`, `smoke`. Accessibility: `a11y`, `keyboard`, `layout-a11y`. PWA: `pwa`, `offline`.
+- A test that can't run on one engine is **skipped with a reason** (`test.skip(browserName === 'webkit', '…')`), never deleted. Playwright's WebKit doesn't Tab to buttons; Chromium-only features (offline service worker, forced colors) are skipped on WebKit.
+- CI runs everything on both profiles (see [INFRASTRUCTURE.md](INFRASTRUCTURE.md#ci-checks)). If your sandbox lacks WebKit, the PR's `e2e / ios-safari` job is where it runs.
+
+<!-- /owner: 4.4 -->
 
 ## Verdict engine
 
