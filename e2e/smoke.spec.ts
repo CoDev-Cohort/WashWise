@@ -1,13 +1,21 @@
 import { expect, test } from '@playwright/test'
+import { LOCATION_ALLOWED, seedSavedLocation, stubExternalServices } from './support'
 
-test('/ renders the landing placeholder', async ({ page }) => {
+test('/ renders the landing page', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'WashWise' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Use my location' })).toBeVisible()
 })
 
-test('/home renders the home placeholder (deep link)', async ({ page }) => {
-  await page.goto('/home')
-  await expect(page.getByRole('heading', { name: 'Should you wash?' })).toBeVisible()
+test.describe('with location allowed and a position saved', () => {
+  test.use(LOCATION_ALLOWED)
+
+  test('/home renders the home placeholder (deep link)', async ({ page }) => {
+    await stubExternalServices(page)
+    await seedSavedLocation(page)
+    await page.goto('/home')
+    await expect(page.getByRole('heading', { name: 'Should you wash?' })).toBeVisible()
+  })
 })
 
 test('unknown paths redirect to /', async ({ page }) => {

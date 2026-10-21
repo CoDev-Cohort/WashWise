@@ -18,7 +18,7 @@ The app can ask the device for its current position, report clearly what state t
 
 **Acceptance Criteria**:
 
-1. **Given** the user has not been asked yet, **When** the app starts, **Then** the state is "idle" and no permission prompt appears until the app requests location.
+1. **Given** the user has not been asked yet and the browser does not already block the site, **When** the app starts, **Then** the state is "idle" and no permission prompt appears until the app requests location. If the browser already blocks the site, the state is "permanently blocked" from the start.
 2. **Given** the app requests location, **When** the browser is waiting for the user or the device, **Then** the state is "requesting".
 3. **Given** the user allows location and the device reports a position, **When** the request completes, **Then** the state is "granted" and the coordinates are available.
 4. **Given** the user refuses the prompt, **When** the request completes, **Then** the state is "denied".
@@ -66,7 +66,7 @@ A user who already allowed location opens the app and goes straight to the home 
 
 1. **Given** permission is granted and coordinates are saved, **When** the user opens any route, **Then** they reach `/home` without seeing the landing page.
 2. **Given** the user lands on `/home` with saved coordinates, **When** the page renders, **Then** it renders at once from those coordinates without waiting for a new position.
-3. **Given** the home page is showing, **When** a new position arrives in the background, **Then** the app uses it for later requests without a visible reload or flicker.
+3. **Given** the home page is showing, **When** a new position arrives in the background, **Then** the app uses it for later requests, and when the new position is within about 1 km of the old one there is no visible reload or flicker.
 4. **Given** the user has never granted permission, **When** they open `/home` directly, **Then** they are redirected to `/`.
 5. **Given** permission was revoked in the browser, **When** the user opens the app, **Then** they are redirected to `/` and see the matching landing state.
 6. **Given** permission is revoked while the app is open, **When** the app next checks, **Then** the user is sent to `/`.
@@ -82,7 +82,7 @@ Given coordinates, the app finds a human-readable place name (city, or the neare
 
 1. **Given** coordinates inside a city, **When** the name is requested, **Then** the city name is returned.
 2. **Given** coordinates with no city, **When** the name is requested, **Then** the locality is used, or the region if there is no locality.
-3. **Given** the same coordinates were looked up recently, **When** the name is requested again, **Then** the earlier answer is reused without a new network request.
+3. **Given** the same coordinates were already looked up during the same visit, **When** the name is requested again, **Then** the earlier answer is reused without a new network request.
 4. **Given** the lookup fails or returns no usable name, **When** the name is requested, **Then** "Your location" is shown and the app does not crash.
 5. **Given** mocked responses, **When** automated tests run, **Then** every case above is verified without network access.
 
@@ -145,4 +145,5 @@ Given coordinates, the app finds a human-readable place name (city, or the neare
 
 - Q: How long should the app wait for a position before showing "timeout"? → A: 10 seconds, matching the forecast timeout (FR-005).
 - Q: What does "Try again" do when the site is permanently blocked? → A: It asks the browser again; the blocked screen stays if the browser still refuses, and the request succeeds if the user has re-enabled location (FR-010a).
+- Q (analysis fixes): Story 1 criterion 1 now covers a site the browser already blocks; Story 3 criterion 3 limits "no flicker" to moves under about 1 km; Story 4 criterion 3 says "during the same visit".
 - Q: Do saved coordinates expire? → A: No. They render the home page at once and are replaced by the background refresh; they are stored rounded to about 1 km (FR-006, FR-006a).

@@ -204,7 +204,7 @@ children: [
 
 | `status`                       | Icon (lucide, `aria-hidden`)       | Label                                   | Extra                                                           | Live region          |
 | ------------------------------ | ---------------------------------- | --------------------------------------- | --------------------------------------------------------------- | -------------------- |
-| `idle`                         | Logo (`/logo.svg`, decorative)     | `h1` "WashWise" + one-line pitch        | Button "Use my location" (`MapPin`)                             | none                 |
+| `idle`                         | Logo (`/logo.svg`, decorative)     | `h1` "WashWise" + pitch "Laundry and car-wash advice for today’s weather." (the existing placeholder line) | Button "Use my location" (`MapPin`)                             | none                 |
 | `requesting`                   | `LoaderCircle`, spin               | "Finding you…"                          | none. Spin is off under `motion-reduce`                         | `role="status"`      |
 | `denied`                       | `MapPinOff`                        | "Location access was denied"            | Button "Try again"                                              | `role="alert"`       |
 | `blocked`                      | `MapPinOff`                        | "Location access is blocked"            | Button "Try again" + hint "Enable location in your browser's site settings" | `role="alert"` |
@@ -295,12 +295,21 @@ Each P2 task writes its doc changes in a fresh `<!-- owner: 2.x -->` block, as P
 
 | File                | Change                                                                                                                                                                                                     | Task |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| `INFRASTRUCTURE.md` | External services: replace "Client-side free tier" with the real request, fallback and privacy note for BigDataCloud. New "Location & storage" section: Geolocation options, 10 s timeout, the `localStorage` key and record | 2.1, 2.2 |
+| `INFRASTRUCTURE.md` | New `owner: 2.2` block with the BigDataCloud request, fallback and privacy note (the P1 table row stays untouched). New `owner: 2.1` "Location & storage" section: Geolocation options, 10 s timeout, the `localStorage` key and record | 2.1, 2.2 |
 | `CLAUDE.md`         | Data access: components get location only through `useGeolocation` / `useCoordinates` and the place name through `useCityName`. App structure: `/home` sits under `RequireLocation`, loaders in `routes.tsx` | 2.1, 2.2, 2.4 |
 | `DESIGN.md`         | Landing page: the 7 screens, icons used, copy table                                                                                                                                                        | 2.3  |
 | `README.md`         | Nothing, unless a script is added (none is)                                                                                                                                                                | n/a  |
 
-Done check: `pnpm docs:check --done 2.1,2.2,2.3,2.4` once the blocks are filled in.
+Marker rules:
+
+- Each task creates its own `owner: 2.x` block and edits nothing inside another task's block.
+- The one exception is the stale App structure tree in the P1 `owner: 1.3` block of `CLAUDE.md` (it still shows `/` and `/home` as placeholders). Task 2.4 is explicitly asked to update that tree.
+- P2 creates no `TODO (task 2.x)` placeholders, so `pnpm docs:check --done 2.x` would pass without checking anything. It is not used as a P2 gate; the PR checklist item is satisfied by reviewing the diff of the docs.
+
+## Hand-off to P3
+
+- Sections read the location with `useCoordinates()` and then call `useForecast(lat, lon)`. They never read `localStorage` or call the Geolocation API themselves.
+- The background refresh can change the coordinates while the home page is open. When the new position is in the same ~1 km cell (2 dp), the forecast query key is unchanged and nothing reloads. When the user has moved to a different cell, the key changes and the forecast loads again, so **P3 should keep the previous forecast on screen while the new one loads** (TanStack Query `placeholderData: keepPreviousData` in the P3 page code, not in the shared `useForecast`).
 
 ## Constitution Compliance
 
@@ -315,3 +324,15 @@ There is no `AGENTS.md` and no constitution in the repository, so there are no p
 | Never hit the network in tests                                        | PASS (MSW for geocoding; stubbed browser APIs; e2e routes mocked)               |
 | Time-dependent logic takes `now` as an argument                       | PASS / n/a (no clock logic; timeouts use fake timers)                           |
 | New work stays inside the active spec                                 | PASS (the one addition, place name on the `/home` placeholder, is justified in Component breakdown and removed by P3) |
+
+## Known Risks
+
+Recorded from the spec ↔ plan analysis (2026-10-21). The formal red-team step has not run yet, so these are open until it does.
+
+| Risk                                       | What can happen                                                                                                                                                                                              | Status / mitigation                                                                                                                                                                                          |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| K1: prompt dismissed without an answer     | Firefox's "Not now" never calls the success or error callback, so the page stays on "Finding you…" with no way out. The browser `timeout` option does not run while the prompt is open                       | **Accepted (2026-10-21).** Only Firefox users who pick "Not now" are affected, and a reload recovers. No escape hatch is built in P2. Confirm on real Firefox in T025                               |
+| K2: Permissions API gaps                   | Older Safari may not support `permissions.query` for geolocation. Playwright WebKit may report a different state than the real browser                                                                       | Handled by design: `queryPermission` returns `unknown`, the guards then never skip the landing page. Cost: such users tap the button on every visit. Verify on a real iPhone (T025) and early in T017. Also confirm that "Allow once" / "Allow this time" reports `granted` straight after the user allows: the `/home` guard checks it, so a browser that keeps saying `prompt` would bounce the user back to the landing page        |
+| K3: forecast reloads after moving          | A user who moves more than ~1 km sees the forecast reload once the background refresh lands                                                                                                                  | Accepted for P2; mitigated in P3 (see Hand-off to P3)                                                                                                                                                        |
+| K4: BigDataCloud limits                    | The keyless client endpoint has no published rate guarantee and could throttle or change                                                                                                                     | Accepted: failure falls back to "Your location" and never blocks the page (FR-016). Revisit if lookups fail in practice                                                                                      |
+| K5: saved coordinates never expire         | A user who travelled sees the old place's forecast for the moment before the refresh lands, or longer if the refresh fails                                                                                   | Accepted (FR-006a, a deliberate product choice)                                                                                                                                                              |

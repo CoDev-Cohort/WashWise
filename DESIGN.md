@@ -134,6 +134,29 @@ Two icon sets, each with its own job:
 
 <!-- /owner: 1.6 -->
 
+<!-- owner: 2.3 -->
+
+## Landing page
+
+There is no Figma frame for the landing page. It is built from the existing tokens only, so it works in light and dark with no extra styling. Every screen is an `EmptyState` ([`src/components/feedback/EmptyState.tsx`](src/components/feedback/EmptyState.tsx)): one icon, one label, at most one action, centered in the ≤ 430 px column. The page is [`src/pages/LandingPage.tsx`](src/pages/LandingPage.tsx); all its copy sits in one `LANDING_COPY` object.
+
+| Location state      | Icon (lucide, decorative) | Label (`h1`)                             | Extra                                                                  | Announced as |
+| ------------------- | ------------------------- | ---------------------------------------- | ---------------------------------------------------------------------- | ------------ |
+| Idle                | Logo (`/logo.svg`)        | WashWise (wordmark style)                | Pitch line, button **Use my location** (`MapPin`)                      | none         |
+| Requesting          | `LoaderCircle`, spinning  | Finding you…                             | None. The spin stops under reduced motion                              | status       |
+| Denied              | `MapPinOff`               | Location access was denied               | **Try again**                                                          | alert        |
+| Permanently blocked | `MapPinOff`               | Location access is blocked               | **Try again** + hint "Enable location in your browser's site settings" | alert        |
+| Unavailable         | `TriangleAlert`           | We couldn’t find your location           | **Try again**                                                          | alert        |
+| Timeout             | `TriangleAlert`           | Finding you took too long                | **Try again**                                                          | alert        |
+| Unsupported         | `MapPinOff`               | Location isn't available in this browser | No action                                                              | alert        |
+
+- **Colors**: wordmark `text-ink-strong`, labels `text-ink`, hint `text-ink-muted`, spinner `text-accent`, error icons `text-notyet-text`, button `bg-ink` / `text-on-ink` (the same primary button as `ErrorFallback`).
+- **Type**: wordmark `font-display text-display`, labels `font-title text-title`, hint and pitch `font-body text-body`, button `font-status text-status`.
+- **Accessibility**: icons are `aria-hidden` (the label carries the meaning), the logo has empty alt text, and every action is a real `<button>`. Progress is a polite `status`; failures are an `alert`. Contrast comes from the token pairs already measured in [Dark palette & contrast](#dark-palette--contrast).
+- **No city search**: the landing page has no text field of any kind. The app always uses the device location.
+
+<!-- /owner: 2.3 -->
+
 <!-- owner: 1.8 -->
 
 ## Dark palette & contrast

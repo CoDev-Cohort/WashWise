@@ -60,6 +60,8 @@ const PAIRS: [string, string, number][] = [
   ['caution-dot', 'bg', 3],
   ['notyet-dot', 'bg', 3],
   ['accent-alt', 'bg', 3],
+  // Landing page: error icons sit on the page background (P2 task 2.3)
+  ['notyet-text', 'bg', 3],
 ]
 
 describe.each([
