@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { StatusNotice } from '@/components/feedback/StatusNotice'
 import { getCardContent } from '@/features/home/cardContent'
 import { DayStrip } from '@/features/home/components/DayStrip'
@@ -16,6 +16,7 @@ import { useCityName } from '@/features/location/useCityName'
 import { useCoordinates, useLocationRefresh } from '@/features/location/useCoordinates'
 import { useTheme } from '@/features/theme/useTheme'
 import { useNow } from '@/lib/useNow'
+import { usePageTitle } from '@/lib/usePageTitle'
 
 /**
  * The home page: header, day strip, verdict cards, rain chart and Other Days for the selected day
@@ -24,6 +25,7 @@ import { useNow } from '@/lib/useNow'
  * forecast (from the device after a restart) shows from today on, under a banner with its age (P4.2).
  */
 export function HomePage() {
+  usePageTitle('WashWise — Should you wash?')
   const coords = useCoordinates()
   const now = useNow()
   const forecast = useHomeForecast(coords, now)
@@ -31,6 +33,20 @@ export function HomePage() {
   // The pill names the place the forecast on screen is for, so the two always agree.
   const place = useCityName(forecast.shownCoords.lat, forecast.shownCoords.lon)
   const { refresh, refreshing } = useLocationRefresh()
+
+  // A successful "Try again" removes the notice holding the button. Focus would fall to <body>, so it
+  // moves to the page heading instead (P4.3 FR-005).
+  const heading = useRef<HTMLHeadingElement>(null)
+  const retried = useRef(false)
+  const retry = () => {
+    retried.current = true
+    forecast.retry()
+  }
+  useEffect(() => {
+    if (!retried.current || forecast.isFetching) return
+    retried.current = false
+    if (document.activeElement === document.body) heading.current?.focus()
+  }, [forecast.isFetching])
   const { theme, toggle } = useTheme()
   const [selected, setSelected] = useState(0)
 
@@ -49,7 +65,9 @@ export function HomePage() {
         theme={theme}
         onToggleTheme={toggle}
       />
-      <h1 className="font-title text-title text-ink">Should you wash?</h1>
+      <h1 ref={heading} tabIndex={-1} className="font-title text-title text-ink">
+        Should you wash?
+      </h1>
       {view.kind === 'ready' && view.stale && copy && (
         <StatusNotice
           variant="banner"
@@ -64,7 +82,7 @@ export function HomePage() {
                 : `${copy.label}. Showing the last forecast that loaded.`
           }
           meta={`Updated ${formatDataAge(view.data.fetchedAt, now)}`}
-          onRetry={forecast.retry}
+          onRetry={retry}
           retrying={forecast.isFetching}
         />
       )}
@@ -76,12 +94,7 @@ export function HomePage() {
           <OtherDaysList rows={otherDays} />
         </>
       ) : view.kind === 'error' && copy ? (
-        <StatusNotice
-          variant="block"
-          label={copy.label}
-          hint={copy.hint}
-          onRetry={forecast.retry}
-        />
+        <StatusNotice variant="block" label={copy.label} hint={copy.hint} onRetry={retry} />
       ) : (
         <HomeSkeleton />
       )}

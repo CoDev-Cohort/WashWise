@@ -4,7 +4,7 @@ interface StatusNoticeProps {
   label: string
   hint?: string
   onRetry: () => void
-  /** A retry is running: the button is disabled and says so. */
+  /** A retry is running: the button is `aria-disabled` (keeps focus, P4.3 FR-005) and says so. */
   retrying?: boolean
   /**
    * `block` replaces the page content and is announced at once (`alert`).
@@ -19,7 +19,7 @@ interface StatusNoticeProps {
 }
 
 const BUTTON =
-  'inline-flex shrink-0 items-center gap-2 rounded-lg font-status text-status focus-ring disabled:opacity-60'
+  'inline-flex shrink-0 items-center gap-2 rounded-lg font-status text-status focus-ring aria-disabled:opacity-60'
 
 /** The one error pattern: one icon, one label, an optional hint and "Try again" (spec FR-004). */
 export function StatusNotice({
@@ -33,8 +33,8 @@ export function StatusNotice({
   const button = (
     <button
       type="button"
-      onClick={onRetry}
-      disabled={retrying}
+      onClick={retrying ? undefined : onRetry}
+      aria-disabled={retrying}
       className={`${BUTTON} ${
         variant === 'block'
           ? 'bg-ink px-4 py-2 text-on-ink'

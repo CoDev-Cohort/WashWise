@@ -3,7 +3,11 @@ import { BONE } from './skeleton'
 /** The day strip's frame with placeholder cells: same grid, borders, padding and type as `DayStrip`. */
 export function DayStripSkeleton() {
   return (
-    <div data-section="strip" aria-hidden="true" className="grid grid-cols-6 gap-chip-gap">
+    <div
+      data-section="strip"
+      aria-hidden="true"
+      className="grid grid-cols-3 gap-chip-gap min-[360px]:grid-cols-6"
+    >
       {Array.from({ length: 6 }, (_, i) => (
         <div
           key={i}

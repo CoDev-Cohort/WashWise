@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { useGeolocation } from '@/features/location/useGeolocation'
+import { usePageTitle } from '@/lib/usePageTitle'
 
 /** All landing copy in one place. The strings in quotes in the spec and Linear COH-21 are fixed. */
 const LANDING_COPY = {
@@ -29,6 +30,7 @@ const ERROR_ICON_CLASS = 'text-notyet-text'
  * There is no city search; the app only ever uses the current location (FR-009).
  */
 export function LandingPage() {
+  usePageTitle('WashWise — Allow location')
   const navigate = useNavigate()
   const { status, request } = useGeolocation()
   // `granted` can also mean "allowed on an earlier visit". Only show the spinner for a tap on this screen.

@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router'
+import { useRouteFocus } from '@/app/useRouteFocus'
 import { PwaPrompts } from '@/features/pwa/components/PwaPrompts'
 
 /**
@@ -6,6 +7,7 @@ import { PwaPrompts } from '@/features/pwa/components/PwaPrompts'
  * for the update toast and install prompt at the bottom (4.2).
  */
 export function MobileColumn() {
+  useRouteFocus()
   return (
     <div className="min-h-dvh bg-bg text-ink">
       <div

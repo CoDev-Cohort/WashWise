@@ -11,13 +11,14 @@ interface DayStripProps {
  * Six selectable days. Each is a real button; the selected one carries `aria-pressed`, so every day
  * is a Tab stop and Enter/Space select it (FR-004).
  */
+// Below 360 px (or at 200% zoom) six columns are too narrow for "TODAY": two rows of three (P4.3 FR-011).
 export function DayStrip({ days, selected, onSelect }: DayStripProps) {
   return (
     <div
       data-section="strip"
       role="group"
       aria-label="Choose a day"
-      className="grid grid-cols-6 gap-chip-gap"
+      className="grid grid-cols-3 gap-chip-gap min-[360px]:grid-cols-6"
     >
       {days.map((day) => {
         const active = day.index === selected
@@ -28,7 +29,9 @@ export function DayStrip({ days, selected, onSelect }: DayStripProps) {
             aria-pressed={active}
             onClick={() => onSelect(day.index)}
             className={`flex min-w-0 flex-col items-center gap-1 rounded-lg border px-1 py-2 focus-ring ${
-              active ? 'border-ink bg-ink text-on-ink' : 'border-border bg-surface text-ink-strong'
+              active
+                ? 'border-ink bg-ink text-on-ink forced-colors:border-4 forced-colors:border-[Highlight]'
+                : 'border-border bg-surface text-ink-strong'
             }`}
           >
             {/* The visible text is the accessible name ("Today, 21"), so voice control can say it. */}

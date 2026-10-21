@@ -34,10 +34,10 @@ export function RainChart({ bars }: RainChartProps) {
                 <span className="font-metric text-metric text-ink-strong">
                   {bar.percent === null ? '—' : `${Math.round(bar.percent)}%`}
                 </span>
-                <span className="flex h-24 w-full items-end rounded-md bg-surface-muted">
+                <span className="flex h-24 w-full items-end rounded-md bg-surface-muted forced-colors:border forced-colors:border-[CanvasText]">
                   {bar.percent !== null && (
                     <span
-                      className={`w-full rounded-md ${barColor(bar.percent)}`}
+                      className={`w-full rounded-md ${barColor(bar.percent)} forced-colors:bg-[CanvasText] forced-colors:forced-color-adjust-none`}
                       style={{ height: `${Math.max(4, Math.min(100, bar.percent))}%` }}
                     />
                   )}

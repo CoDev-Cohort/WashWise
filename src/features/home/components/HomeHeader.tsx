@@ -10,7 +10,11 @@ interface HomeHeaderProps {
   onToggleTheme: () => void
 }
 
-/** Logo on the left; the location pill and the theme toggle at the upper right. */
+/**
+ * Logo on the left; the location pill and the theme toggle at the upper right. When they don't fit
+ * (320 px, or zoomed to 200%), the pill and toggle wrap under the logo instead of overflowing
+ * (P4.3 FR-011).
+ */
 export function HomeHeader({
   place,
   refreshing,
@@ -19,9 +23,9 @@ export function HomeHeader({
   onToggleTheme,
 }: HomeHeaderProps) {
   return (
-    <header className="flex items-center justify-between gap-3 pt-6">
+    <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-6">
       <span className="font-display text-display text-ink-strong">WashWise</span>
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="ml-auto flex min-w-0 items-center gap-2">
         <LocationPill place={place} refreshing={refreshing} onRefresh={onRefresh} />
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>

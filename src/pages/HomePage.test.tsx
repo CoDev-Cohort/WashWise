@@ -342,9 +342,14 @@ describe('HomePage failed updates (P4 FR-007)', () => {
 
     fail = false
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
-    expect(screen.getByRole('button', { name: 'Retrying…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Retrying…' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
     await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
     expect(screen.getByRole('article', { name: 'Laundry' })).toBeInTheDocument()
+    // The button went with the banner: focus moves to the heading, not to <body> (P4.3 FR-005).
+    expect(screen.getByRole('heading', { name: 'Should you wash?' })).toHaveFocus()
   })
 
   it('when the new place fails, keeps the old forecast and its place name, and says so', async () => {

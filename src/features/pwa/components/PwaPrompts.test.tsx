@@ -128,4 +128,12 @@ describe('PwaPrompts — install prompt', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
     expect(screen.getByRole('region', INSTALL)).toBeInTheDocument()
   })
+
+  it('adds scroll padding while a prompt shows, so focus never hides behind it (P4.3 FR-018)', async () => {
+    returningUser()
+    renderAt('/home')
+    expect(document.documentElement).toHaveClass('has-bottom-prompt')
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }))
+    expect(document.documentElement).not.toHaveClass('has-bottom-prompt')
+  })
 })

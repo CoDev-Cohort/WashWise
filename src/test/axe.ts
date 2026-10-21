@@ -1,4 +1,4 @@
-import axe from 'axe-core'
+import { run } from 'axe-core'
 import { expect } from 'vitest'
 
 /**
@@ -7,7 +7,7 @@ import { expect } from 'vitest'
  * Fails on serious or critical findings (spec FR-001); moderate/minor are left to the e2e report.
  */
 export async function expectNoSeriousViolations(container: Element) {
-  const results = await axe.run(container, {
+  const results = await run(container, {
     runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] },
     rules: { 'color-contrast': { enabled: false } },
   })

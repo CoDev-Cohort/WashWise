@@ -64,6 +64,10 @@ const PAIRS: [string, string, number][] = [
   ['accent-alt', 'surface', 4.5],
   // Landing page: error icons sit on the page background (P2 task 2.3)
   ['notyet-text', 'bg', 3],
+  // Focus ring (P4.3 FR-004): `focus-ring` is accent next to every surface it sits on; the inverse
+  // ring is on-ink around the ink prompt card (already 4.5 above)
+  ['accent', 'surface', 3],
+  ['accent', 'surface-muted', 3],
 ]
 
 describe.each([
@@ -76,6 +80,41 @@ describe.each([
     expect(contrast(theme[fg]!, theme[bg]!)).toBeGreaterThanOrEqual(min)
   })
 })
+
+/** `color` at `alpha` over `under`, as `opacity` renders it. */
+function blend(color: string, under: string, alpha: number): string {
+  const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+  const [a, b] = [channels(color), channels(under)]
+  return `#${a
+    .map((c, i) =>
+      Math.round(c * alpha + b[i]! * (1 - alpha))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`
+}
+
+/** `aria-disabled:opacity-60` on the StatusNotice retry buttons. */
+const DISABLED_OPACITY = 0.6
+
+describe.each([
+  ['light', light],
+  ['dark', dark],
+] as const)(
+  'disabled controls stay readable, %s (P4.3 FR-010: exempt from AA, still ≥ 3:1)',
+  (_, t) => {
+    it('banner retry: ink text on surface', () => {
+      expect(
+        contrast(blend(t.ink!, t.surface!, DISABLED_OPACITY), t.surface!),
+      ).toBeGreaterThanOrEqual(3)
+    })
+    it('block retry: on-ink text on an ink button over bg', () => {
+      const button = blend(t.ink!, t.bg!, DISABLED_OPACITY)
+      const text = blend(t['on-ink']!, t.bg!, DISABLED_OPACITY)
+      expect(contrast(text, button)).toBeGreaterThanOrEqual(3)
+    })
+  },
+)
 
 describe('dark palette', () => {
   it('defines a dark value for every token', () => {
@@ -103,6 +142,10 @@ describe('dark palette', () => {
       document.documentElement.classList.remove('dark')
       style.remove()
     }
+  })
+
+  it('blends like CSS opacity', () => {
+    expect(blend('#000000', '#ffffff', 0.5)).toBe('#808080')
   })
 
   it('computes contrast like the WCAG reference', () => {

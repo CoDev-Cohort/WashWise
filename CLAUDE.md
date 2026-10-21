@@ -240,6 +240,23 @@ HomePage
 
 <!-- /owner: 4.2 -->
 
+<!-- owner: 4.3 -->
+
+## Accessibility
+
+- Target WCAG 2.2 AA. Design rules (focus ring, targets, forced colors, reflow) are in [DESIGN.md](DESIGN.md#accessibility).
+- Every interactive element gets the `focus-ring` utility (`focus-ring-inverse` on `bg-ink`). Busy buttons use `aria-disabled`, never `disabled`, so focus isn't lost.
+- Pages set their title with `usePageTitle(...)` ([`src/lib/usePageTitle.ts`](src/lib/usePageTitle.ts)). `useRouteFocus()` in `MobileColumn` focuses `main h1` (`tabIndex={-1}`) after an in-app page change, never on first load.
+- **Automated checks** run with `pnpm e2e`:
+  - `e2e/a11y.spec.ts`: axe (WCAG 2.2 AA tags plus landmark/heading rules) over every state in [`e2e/a11y/states.ts`](e2e/a11y/states.ts), light and dark. Serious/critical findings fail; moderate/minor are logged as `[axe]`. **Add a state there** when you add a screen or a message.
+  - `e2e/keyboard.spec.ts`: Tab order matches DOM order, every stop has a ring, focus stays put after actions (Chromium only).
+  - `e2e/layout-a11y.spec.ts`: 24 px targets, 320 px reflow (no overflow, nothing clipped), forced colors, reduced motion, focus not hidden by the bottom prompt.
+- States e2e can't reach (update toast, crash screen) use `expectNoSeriousViolations(container)` from [`src/test/axe.ts`](src/test/axe.ts) in their component tests.
+- e2e landing states come from `stubGeolocation(page, outcome)` in `e2e/support.ts`; themes from `setTheme(page, theme)`.
+- Screen-reader walkthrough (by hand, before release): [`docs/a11y/screen-reader-walkthrough.md`](docs/a11y/screen-reader-walkthrough.md).
+
+<!-- /owner: 4.3 -->
+
 ## Verdict engine
 
 Lives in `src/features/verdict/`. It is pure TypeScript: **no React or TanStack imports** (enforced by ESLint, FR-006). Every function takes `now` as an argument, so tests never touch the clock.

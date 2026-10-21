@@ -23,6 +23,7 @@ export function EmptyState({ icon, title, hint, action, role = 'status', brand }
           {icon}
         </span>
         <h1
+          tabIndex={-1}
           className={
             brand ? 'font-display text-display text-ink-strong' : 'font-title text-title text-ink'
           }

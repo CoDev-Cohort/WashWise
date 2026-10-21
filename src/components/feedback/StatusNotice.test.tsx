@@ -43,12 +43,13 @@ describe('StatusNotice', () => {
     icons.forEach((icon) => expect(icon).toHaveAttribute('aria-hidden', 'true'))
   })
 
-  it('is disabled and says so while retrying', async () => {
+  it('is disabled and says so while retrying, and keeps focus (P4.3 FR-005)', async () => {
     const onRetry = vi.fn()
     render(<StatusNotice variant="banner" label="x" onRetry={onRetry} retrying />)
     const button = screen.getByRole('button', { name: 'Retrying…' })
-    expect(button).toBeDisabled()
+    expect(button).toHaveAttribute('aria-disabled', 'true')
     await userEvent.click(button)
     expect(onRetry).not.toHaveBeenCalled()
+    expect(button).toHaveFocus()
   })
 })
