@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { LOCATION_ALLOWED, seedSavedLocation, stubExternalServices, stubForecast } from './support'
 
 const TITLE = { name: 'Should you wash?' }

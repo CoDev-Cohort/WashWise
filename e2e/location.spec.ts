@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { LOCATION_ALLOWED, seedSavedLocation, stubExternalServices } from './support'
 
 const START = { name: 'Use my location' }

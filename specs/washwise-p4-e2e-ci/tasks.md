@@ -1,8 +1,8 @@
 # Tasks: WashWise P4.4 · End-to-End Tests for Core Flows
 
 **Date**: 2026-10-21
-**Spec**: specs/spec.md
-**Plan**: specs/plan.md
+**Spec**: specs/washwise-p4-e2e-ci/spec.md
+**Plan**: specs/washwise-p4-e2e-ci/plan.md
 **Structure**: By user story (B)
 **Tracker**: Linear COH-32 (task 4.4, parent COH-9)
 

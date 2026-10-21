@@ -1,6 +1,6 @@
-import { test } from '@playwright/test'
 import { scan } from './a11y/axe'
 import { STATES } from './a11y/states'
+import { test } from './fixtures'
 import { LOCATION_ALLOWED, setTheme } from './support'
 
 /** The full matrix runs on Chromium; WebKit runs a smoke set (plan "Resolved items"). */

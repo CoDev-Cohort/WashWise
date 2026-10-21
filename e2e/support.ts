@@ -102,50 +102,139 @@ export async function holdForecast(page: Page) {
 export type GeoOutcome =
   'prompt' | 'pending' | 'denied' | 'blocked' | 'unavailable' | 'timeout' | 'unsupported'
 
+type Permission = 'granted' | 'prompt' | 'denied'
+type LocationError = 'denied' | 'unavailable' | 'timeout'
+/** How the next `getCurrentPosition` calls answer. */
+type Answer =
+  { position: { latitude: number; longitude: number } } | { error: LocationError } | 'pending'
+
+interface FakeState {
+  permission: Permission
+  answer: Answer
+  unsupported?: boolean
+}
+
+const FAKE_KEY = 'e2e:fake-location'
+
 /**
- * Replaces the browser location APIs before the app loads, so a test can reach every landing state.
- * `prompt` and `pending` report permission "prompt"; `blocked` reports "denied" (the browser won't ask
- * again). Errors use the Geolocation API codes: 1 refused, 2 unavailable, 3 timeout.
+ * A browser location the test controls (P4.4 FR-005), replacing `navigator.geolocation` and
+ * `navigator.permissions` before the app loads. The permission status is a real `EventTarget`, so the
+ * app's `change` listener fires when the test calls `permission(...)`, as when a user changes it in
+ * the browser. A successful answer turns the permission to `granted`, as a browser does after "Allow".
+ * The state survives reloads (sessionStorage), so a flow can span pages.
+ *
+ * Don't combine with `LOCATION_ALLOWED`: that grants Playwright's real geolocation instead.
  */
-export async function stubGeolocation(page: Page, outcome: GeoOutcome) {
-  await page.addInitScript((outcome: GeoOutcome) => {
-    if (outcome === 'unsupported') {
-      // The app checks `'geolocation' in navigator`, so the property has to go, not just be empty.
-      delete (Navigator.prototype as { geolocation?: unknown }).geolocation
-      return
-    }
-    const codes: Partial<Record<GeoOutcome, number>> = {
-      denied: 1,
-      blocked: 1,
-      unavailable: 2,
-      timeout: 3,
-    }
-    const permission = outcome === 'blocked' ? 'denied' : 'prompt'
-    Object.defineProperty(navigator, 'permissions', {
-      configurable: true,
-      value: {
-        query: () =>
-          Promise.resolve({
-            state: permission,
-            addEventListener: () => {},
-            removeEventListener: () => {},
-            onchange: null,
-          }),
-      },
-    })
-    Object.defineProperty(navigator, 'geolocation', {
-      configurable: true,
-      value: {
-        getCurrentPosition: (_ok: PositionCallback, fail?: PositionErrorCallback | null) => {
-          const code = codes[outcome]
-          if (code === undefined) return // pending / prompt: never answers
-          setTimeout(() => fail?.({ code, message: outcome } as GeolocationPositionError), 50)
+export async function fakeLocation(page: Page, initial: FakeState) {
+  await page.addInitScript(
+    ([key, initial]) => {
+      const saved = sessionStorage.getItem(key)
+      const state = (saved ? JSON.parse(saved) : initial) as FakeState
+      const save = () => sessionStorage.setItem(key, JSON.stringify(state))
+      save()
+      if (state.unsupported) {
+        // The app checks `'geolocation' in navigator`, so the property has to go, not just be empty.
+        delete (Navigator.prototype as { geolocation?: unknown }).geolocation
+        return
+      }
+
+      class FakePermissionStatus extends EventTarget {
+        readonly name = 'geolocation'
+        onchange: ((this: PermissionStatus, ev: Event) => unknown) | null = null
+        get state() {
+          return state.permission
+        }
+      }
+      const status = new FakePermissionStatus()
+      const setPermission = (next: Permission) => {
+        if (state.permission === next) return
+        state.permission = next
+        save()
+        const event = new Event('change')
+        status.dispatchEvent(event)
+        status.onchange?.call(status as unknown as PermissionStatus, event)
+      }
+      const codes: Record<LocationError, number> = { denied: 1, unavailable: 2, timeout: 3 }
+
+      Object.defineProperty(navigator, 'permissions', {
+        configurable: true,
+        value: { query: () => Promise.resolve(status) },
+      })
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: {
+          getCurrentPosition(ok: PositionCallback, fail?: PositionErrorCallback | null) {
+            const answer = state.answer
+            if (answer === 'pending') return
+            setTimeout(() => {
+              if ('error' in answer) {
+                const code = codes[answer.error]
+                fail?.({
+                  code,
+                  message: answer.error,
+                  PERMISSION_DENIED: 1,
+                  POSITION_UNAVAILABLE: 2,
+                  TIMEOUT: 3,
+                } as GeolocationPositionError)
+                return
+              }
+              setPermission('granted')
+              ok({
+                coords: { ...answer.position, accuracy: 1000 },
+                timestamp: Date.now(),
+              } as unknown as GeolocationPosition)
+            }, 50)
+          },
+          watchPosition: () => 0,
+          clearWatch: () => {},
         },
-        watchPosition: () => 0,
-        clearWatch: () => {},
-      },
-    })
-  }, outcome)
+      })
+      ;(window as unknown as { fakeControls: () => object }).fakeControls = () => controls
+      const controls = {
+        setPermission,
+        setAnswer(next: Answer) {
+          state.answer = next
+          save()
+        },
+      }
+    },
+    [FAKE_KEY, initial] as const,
+  )
+
+  return {
+    /** Changes the permission, as the user would in the browser settings; fires `change`. */
+    async permission(next: Permission) {
+      await page.evaluate((next) => fakeControls().setPermission(next), next)
+    },
+    /** How the next location requests answer. */
+    async answer(next: Answer) {
+      await page.evaluate((next) => fakeControls().setAnswer(next), next)
+    },
+  }
+}
+
+interface FakeControls {
+  setPermission: (next: Permission) => void
+  setAnswer: (next: Answer) => void
+}
+
+/** Runs in the page: the controls `fakeLocation` installed. */
+declare function fakeControls(): FakeControls
+
+/** The landing-page outcomes as `fakeLocation` states (used by the 4.3 accessibility states). */
+const OUTCOMES: Record<GeoOutcome, FakeState> = {
+  prompt: { permission: 'prompt', answer: 'pending' },
+  pending: { permission: 'prompt', answer: 'pending' },
+  denied: { permission: 'prompt', answer: { error: 'denied' } },
+  blocked: { permission: 'denied', answer: { error: 'denied' } },
+  unavailable: { permission: 'prompt', answer: { error: 'unavailable' } },
+  timeout: { permission: 'prompt', answer: { error: 'timeout' } },
+  unsupported: { permission: 'prompt', answer: 'pending', unsupported: true },
+}
+
+/** Puts the landing page in one fixed state (`fakeLocation` with a preset). */
+export async function stubGeolocation(page: Page, outcome: GeoOutcome) {
+  return fakeLocation(page, OUTCOMES[outcome])
 }
 
 /** Saves a theme choice before the app loads (the app reads `ww-theme` before first paint). */

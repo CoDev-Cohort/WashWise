@@ -72,4 +72,23 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // E2E specs use the guarded `test` (P4.4 FR-006): no real network, ever.
+    files: ['e2e/**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@playwright/test',
+              importNames: ['test', 'expect'],
+              message:
+                "Import { test, expect } from './fixtures' so external requests are guarded.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 )

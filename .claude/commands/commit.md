@@ -67,19 +67,19 @@ Handling the answer:
 
 ### Types
 
-| Type | Use it for |
-|---|---|
-| `feat` | New feature for the user or API consumer (MINOR) |
-| `fix` | Bug fix (PATCH) |
-| `docs` | Documentation only |
-| `style` | Formatting only, no logic change |
-| `refactor` | Code restructure, same behavior |
-| `perf` | Performance improvement |
-| `test` | Add or correct tests |
-| `build` | Build system or dependencies |
-| `ci` | CI/CD configuration or scripts |
-| `chore` | Other maintenance that does not fit above |
-| `revert` | Revert a previous commit |
+| Type       | Use it for                                       |
+| ---------- | ------------------------------------------------ |
+| `feat`     | New feature for the user or API consumer (MINOR) |
+| `fix`      | Bug fix (PATCH)                                  |
+| `docs`     | Documentation only                               |
+| `style`    | Formatting only, no logic change                 |
+| `refactor` | Code restructure, same behavior                  |
+| `perf`     | Performance improvement                          |
+| `test`     | Add or correct tests                             |
+| `build`    | Build system or dependencies                     |
+| `ci`       | CI/CD configuration or scripts                   |
+| `chore`    | Other maintenance that does not fit above        |
+| `revert`   | Revert a previous commit                         |
 
 Choose the type in this order: new behavior = `feat`; corrected behavior = `fix`; only docs = `docs`; only tests = `test`; formatting only = `style`; faster = `perf`; restructure without behavior change = `refactor`; dependencies or build = `build`; pipeline = `ci`; anything else = `chore`.
 
