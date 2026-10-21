@@ -26,15 +26,18 @@ const NOW = Date.UTC(2026, 9, 21, 2, 0)
 
 interface Setup {
   forecast?: () => Response | Promise<Response>
+  geocode?: () => Response | Promise<Response>
 }
 
-async function setup({ forecast }: Setup = {}) {
+async function setup({ forecast, geocode }: Setup = {}) {
   mockMatchMedia({ [DARK_QUERY]: false })
   const geo = mockGeolocation({ permission: 'granted' })
   saveLocation({ lat: 14.6, lon: 120.98 })
   let requests = 0
   server.use(
-    http.get(GEOCODE_ENDPOINT, () => HttpResponse.json({ city: 'Manila' })),
+    http.get(GEOCODE_ENDPOINT, async () =>
+      geocode ? geocode() : HttpResponse.json({ city: 'Manila' }),
+    ),
     http.get(FORECAST_ENDPOINT, async () => {
       requests++
       return forecast ? forecast() : HttpResponse.json(manila)
@@ -231,5 +234,156 @@ describe('HomePage', () => {
     await setup()
     const section = await screen.findByRole('region', { name: 'Other days' })
     expect(within(section).getAllByRole('listitem')).toHaveLength(5)
+  })
+})
+
+const PILL = (place: string) => ({ name: `Update location, ${place}` })
+
+async function tapPill(
+  geo: Awaited<ReturnType<typeof setup>>['geo'],
+  to = { lat: 14.6, lon: 120.98 },
+) {
+  await waitFor(() => expect(screen.getByRole('button', PILL('Manila'))).toBeEnabled())
+  await userEvent.click(screen.getByRole('button', PILL('Manila')))
+  await waitFor(() => expect(geo.pending()).toBe(1))
+  await act(async () => geo.resolvePosition(to))
+}
+
+describe('HomePage first-load errors (P4 FR-004 – FR-006)', () => {
+  it.each([
+    ['offline', () => HttpResponse.error(), 'You’re offline'],
+    [
+      'a service error',
+      () => new HttpResponse('down', { status: 503 }),
+      'The forecast service is having trouble',
+    ],
+    [
+      'an unusable response',
+      () => new HttpResponse('{not json', { status: 200 }),
+      'We couldn’t load the forecast',
+    ],
+  ])('%s shows its own label with the same icon and Try again', async (_, forecast, label) => {
+    await setup({ forecast })
+    // Network and 5xx are retried once (about 1 s) before the error shows.
+    const alert = await screen.findByRole('alert', {}, { timeout: 4000 })
+    expect(within(alert).getByRole('heading', { name: label })).toBeInTheDocument()
+    expect(alert.querySelector('svg[aria-hidden="true"]')).not.toBeNull()
+    expect(within(alert).getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+  })
+
+  it('a forecast that never answers shows the "too long" label', async () => {
+    vi.useFakeTimers({
+      toFake: ['Date', 'setTimeout', 'clearTimeout'],
+      now: NOW,
+      shouldAdvanceTime: true,
+    })
+    await setup({
+      forecast: async () => {
+        await delay('infinite')
+        return HttpResponse.json(manila)
+      },
+    })
+    await act(() => vi.advanceTimersByTimeAsync(10_000))
+    const alert = await screen.findByRole('alert')
+    expect(
+      within(alert).getByRole('heading', { name: 'The forecast is taking too long' }),
+    ).toBeInTheDocument()
+  })
+
+  it('Try again shows the skeleton, sends one request and then the forecast', async () => {
+    let fail = true
+    const { requests } = await setup({
+      forecast: async () => {
+        await delay(30)
+        return fail ? new HttpResponse('nope', { status: 400 }) : HttpResponse.json(manila)
+      },
+    })
+    await screen.findByRole('alert')
+    const before = requests()
+    fail = false
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Loading forecast' })).toBeInTheDocument()
+    expect(await screen.findByRole('article', { name: 'Laundry' })).toBeInTheDocument()
+    expect(requests()).toBe(before + 1)
+  })
+
+  it('keeps the header usable on the error screen', async () => {
+    await setup({ forecast: () => new HttpResponse('nope', { status: 400 }) })
+    await screen.findByRole('alert')
+    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeEnabled()
+    await waitFor(() => expect(screen.getByRole('button', PILL('Manila'))).toBeEnabled())
+  })
+})
+
+describe('HomePage failed updates (P4 FR-007)', () => {
+  it('keeps the forecast and shows a polite banner; a later success removes it', async () => {
+    let fail = false
+    const { geo } = await setup({
+      forecast: async () => {
+        await delay(30)
+        return fail ? new HttpResponse('nope', { status: 400 }) : HttpResponse.json(manila)
+      },
+    })
+    await screen.findByRole('article', { name: 'Laundry' })
+    fail = true
+    await tapPill(geo)
+
+    const banner = await screen.findByRole('status')
+    expect(banner).toHaveTextContent('Couldn’t update the forecast')
+    expect(banner).toHaveTextContent('Showing the last forecast that loaded')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByRole('article', { name: 'Laundry' })).toBeInTheDocument()
+
+    fail = false
+    await userEvent.click(within(banner).getByRole('button', { name: 'Try again' }))
+    expect(within(banner).getByRole('button', { name: 'Retrying…' })).toBeDisabled()
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+    expect(screen.getByRole('article', { name: 'Laundry' })).toBeInTheDocument()
+  })
+
+  it('when the new place fails, keeps the old forecast and its place name, and says so', async () => {
+    const { geo } = await setup()
+    await screen.findByRole('article', { name: 'Laundry' })
+    server.use(
+      http.get(GEOCODE_ENDPOINT, ({ request }) =>
+        HttpResponse.json({
+          city: new URL(request.url).searchParams.get('latitude') === '10.31' ? 'Cebu' : 'Manila',
+        }),
+      ),
+      http.get(FORECAST_ENDPOINT, ({ request }) =>
+        new URL(request.url).searchParams.get('latitude') === '10.31'
+          ? new HttpResponse('nope', { status: 400 })
+          : HttpResponse.json(manila),
+      ),
+    )
+    await tapPill(geo, { lat: 10.31, lon: 123.89 })
+
+    const banner = await screen.findByRole('status')
+    expect(banner).toHaveTextContent('Showing the forecast for your previous location')
+    expect(screen.getByRole('article', { name: 'Laundry' })).toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Loading forecast' })).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', PILL('Manila'))).toBeInTheDocument())
+  })
+})
+
+describe('HomePage place name (P4 FR-009)', () => {
+  it('a failed place-name lookup shows "Your location" and no error', async () => {
+    await setup({ geocode: () => new HttpResponse('nope', { status: 400 }) })
+    expect(await screen.findByRole('article', { name: 'Laundry' })).toBeInTheDocument()
+    expect(screen.getByRole('button', PILL('Your location'))).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('renders the whole page without waiting for a slow place name', async () => {
+    await setup({
+      geocode: async () => {
+        await delay('infinite')
+        return HttpResponse.json({ city: 'Manila' })
+      },
+    })
+    expect(await screen.findByRole('region', { name: 'Other days' })).toBeInTheDocument()
+    expect(screen.getByRole('button', PILL('Your location'))).toBeInTheDocument()
   })
 })

@@ -171,7 +171,7 @@ Built from the existing tokens only. The page is [`src/pages/HomePage.tsx`](src/
 | Verdict cards     | `VerdictCard`                     | `rounded-xl border`, `gap-card-gap`; per verdict `-bg` / `-border` / `-text` / `-pill`; word `font-verdict`, sub-label `font-sublabel`  |
 | Rain chance       | `RainChart`                       | title `font-section text-ink-section`; bar `rain-1…5` by chance on `bg-surface-muted`; `%` `font-metric`, hour `font-body`              |
 | Other days        | `OtherDaysList`, `OtherDayMarker` | row `border-border bg-surface rounded-lg`; Yes `text-accent`, Maybe `text-accent-alt`, Wait `text-ink-strong`, "—" `text-ink-muted`     |
-| Loading / failure | `HomeSkeleton`, `HomeError`       | skeleton `bg-surface-muted` (pulse stops under reduced motion); error is an `alert` with the primary button                             |
+| Loading / failure | `HomeSkeleton`, `StatusNotice`    | see [Loading and error states](#loading-and-error-states)                                                                               |
 
 - **Rain bar colors** (chance → token): < 20 `rain-1`, < 40 `rain-2`, < 60 `rain-3`, < 80 `rain-4`, otherwise `rain-5`. The dark palette flips the scale so a higher chance is lighter.
 - **Cards**: green, amber and red come from the verdict; an unavailable verdict uses `bg-surface-muted` and "Verdict unavailable". Weather pills hold the drying time ("Dries in ~2.5 hrs", "Dries tomorrow") and the condition with a decorative static icon.
@@ -182,6 +182,30 @@ Built from the existing tokens only. The page is [`src/pages/HomePage.tsx`](src/
 - **To check against Figma**: the Figma export was not inspected in code, so section spacing (`gap-6`), the chart's bar height (`h-24`) and the Other Days row layout (both activities per row) are approximations. They are verified by the human tasks T013, T018, T021 and T028.
 
 <!-- /owner: 3.6 -->
+
+<!-- owner: 4.1 -->
+
+## Loading and error states
+
+**Skeletons** have the same frame as the section they stand in for, so nothing moves when the forecast arrives (no layout shift at 393 and 430 px, in both themes).
+
+- Each placeholder line uses the real text's font token (`font-verdict text-verdict`, `font-day text-day`…) holding a non-breaking space, so it takes exactly that line height. Fill: `bg-surface-muted`, `rounded-sm`, `animate-pulse` (none under reduced motion).
+- Section frames are copied as is: strip cells `rounded-lg border-border bg-surface`, cards `rounded-xl border-border bg-surface p-4` with the real activity icon and title, chart bars `h-24 rounded-md`, Other Days rows as in the list. Section headings ("Rain chance", "Other days") show for real.
+- The header and the "Should you wash?" title are never skeletons.
+
+**Errors** use one pattern: one `CircleAlert` icon (decorative), one label, a short hint, and "Try again" (`RotateCcw`).
+
+| Variant  | Where                                 | Look                                                                                                                                                |
+| -------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `block`  | in place of the sections (first load) | centered; icon 40 `text-ink-muted`; label `font-title text-title text-ink`; hint `font-body text-ink-muted`; button `bg-ink text-on-ink rounded-lg` |
+| `banner` | between the title and the day strip   | one row, `rounded-lg border-border bg-surface`; icon 20; label `font-status`; hint `font-caption text-ink-muted`; outline button                    |
+
+- Labels name the cause: "You’re offline", "The forecast is taking too long", "The forecast service is having trouble", "We couldn’t load the forecast". The banner says "Couldn’t update the forecast" and its hint gives the cause, or that the forecast is for your previous location.
+- While retrying, the banner button reads "Retrying…", is disabled (`opacity-60`) and its icon spins (`motion-safe` only).
+- The place-name pill has no error state: it shows "Your location".
+- No new tokens were needed.
+
+<!-- /owner: 4.1 -->
 
 <!-- owner: 1.8 -->
 

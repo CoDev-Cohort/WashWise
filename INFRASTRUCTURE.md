@@ -56,6 +56,12 @@ There's no persistent cache yet. Offline support (service worker and runtime cac
 
 <!-- /owner: 1.4 -->
 
+<!-- owner: 4.1 -->
+
+**Failed updates keep the last forecast.** When a refetch fails, including the first fetch for a new ~1 km cell (where TanStack drops `placeholderData`), the home page keeps showing the last forecast that loaded and adds a "Couldn’t update the forecast" banner with "Try again". A failed _first_ load shows a full error with a label per cause (`errorLabel.ts`). Retry, timeout and cache rules are unchanged; "Try again" is `refetch({ cancelRefetch: false })`.
+
+<!-- /owner: 4.1 -->
+
 <!-- owner: 2.1 -->
 
 ## Location & storage

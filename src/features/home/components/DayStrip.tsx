@@ -13,7 +13,12 @@ interface DayStripProps {
  */
 export function DayStrip({ days, selected, onSelect }: DayStripProps) {
   return (
-    <div role="group" aria-label="Choose a day" className="grid grid-cols-6 gap-chip-gap">
+    <div
+      data-section="strip"
+      role="group"
+      aria-label="Choose a day"
+      className="grid grid-cols-6 gap-chip-gap"
+    >
       {days.map((day) => {
         const active = day.index === selected
         return (

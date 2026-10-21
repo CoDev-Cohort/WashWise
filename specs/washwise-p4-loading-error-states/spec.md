@@ -87,7 +87,7 @@ The place-name lookup fails or is slow. The location pill shows "Your location" 
   - Service error → "The forecast service is having trouble"
   - Anything else, including an unusable response → "We couldn't load the forecast"
 - **FR-006**: "Try again" MUST request the forecast again, show progress while the request runs, ignore further presses until it ends, and update the state to the result.
-- **FR-007**: When a background update fails while a forecast is shown, the system MUST keep that forecast and show a non-blocking notice using the FR-004 pattern ("Couldn't update the forecast") with a "Try again" action. The notice MUST disappear when an update succeeds.
+- **FR-007**: When a background update fails while a forecast is shown, the system MUST keep that forecast and show a non-blocking notice using the FR-004 pattern ("Couldn't update the forecast") with a "Try again" action. The notice MUST disappear when an update succeeds. If the forecast on screen is for a previous location (the new location's forecast failed), the notice MUST say so and the location pill MUST show that previous location's name, so the pill and the forecast always agree.
 - **FR-008**: The first-load error MUST be announced at once to assistive technology; the background-update notice MUST be announced politely.
 - **FR-009**: The place-name lookup MUST keep its silent fallback: "Your location" on failure, no error state, retried when the user taps the location pill.
 - **FR-010**: All loading and error states MUST use the existing design tokens and stay legible in light and dark; any new value MUST be added as a design token and documented.

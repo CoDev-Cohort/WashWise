@@ -199,17 +199,31 @@ HomePage
 ├─ VerdictCards      Laundry + Car Wash for the selected day
 ├─ RainChart         5 hourly bars (+ screen-reader list)
 ├─ OtherDaysList     the strip's days after Today, Laundry + Car Wash markers
-└─ HomeSkeleton / HomeError   while the first forecast loads / when it fails
+└─ HomeSkeleton / StatusNotice   while the first forecast loads / when it fails (see Loading and error states)
 ```
 
 - **One selected day drives the cards and the chart.** `selectedDay` is an index into `Forecast.daily`. Today (index 0) uses the "from now" engine (`computeLaundryVerdict`, `computeCarWashVerdict`), which can move laundry to tomorrow late in the day. Other days use `computeDayVerdicts`, the same results as Other Days.
 - **Pure helpers take `now`** and are tested table-driven: `buildDayStrip`, `getRainBars` (Today = 5 hours from the current one, rolling into the next day; other days = 12–4 PM), `getCardContent`, `buildOtherDays`. Day names and dates come from `DailyPoint.date` and `Forecast.utcOffsetSeconds`, never the device's time zone. `HomePage` gets the time from `useNow()` (re-renders each minute).
 - **Location pill**: `useLocationRefresh()` (in `useCoordinates.ts`) calls the same `request()` that `RequireLocation` owns, shared through the router outlet context `{ coordinates, request, status }`, then invalidates the forecast for the new position. One refresh at a time; a failed one keeps the old position and forecast.
 - **Theme**: `src/features/theme/`. `useTheme()` returns `{ theme, toggle }`; only `themeStorage.ts` touches `localStorage` (`ww-theme`, `'light' | 'dark'`, absent = follow the system). An inline script in `index.html` sets the `dark` class before first paint; `themeStorage.test.ts` fails if it drifts from `resolveTheme`. Never read the theme from a component directly.
-- **States**: first load shows `HomeSkeleton`; a failed first load shows `HomeError` ("Try again" refetches). Once data exists, background failures never replace it.
+- **States**: see [Loading and error states](#loading-and-error-states) (P4).
 - **Tests that render `HomePage`** need MSW handlers for both the forecast and the geocoder, and `vi.useFakeTimers({ toFake: ['Date'], now })` to pin `now` inside the recorded forecast (see `src/pages/HomePage.test.tsx`).
 
 <!-- /owner: 3.6 -->
+
+<!-- owner: 4.1 -->
+
+## Loading and error states
+
+- **`HomePage` switches on one state**: `useHomeForecast(coords)` ([`src/features/home/useHomeForecast.ts`](src/features/home/useHomeForecast.ts)) wraps `useForecast` and returns `{ view, copy, shownCoords, isFetching, retry }`. `view` comes from the pure `getHomeViewState` ([`homeViewState.ts`](src/features/home/homeViewState.ts)): `loading` → `HomeSkeleton`, `error` → `StatusNotice variant="block"`, `ready` → the sections, plus `StatusNotice variant="banner"` when `stale`.
+- **Once a forecast has loaded it never leaves the screen.** The hook keeps the last real result (`lastGood`) because TanStack drops `placeholderData` when the query for a new cell fails. A failed update marks the view `stale`; `previousLocation` says the forecast is for an earlier cell, and `shownCoords` then points the pill's `useCityName` at that cell, so the pill and the forecast always agree.
+- **One error pattern**: [`StatusNotice`](src/components/feedback/StatusNotice.tsx): one decorative `CircleAlert`, one label, a hint, "Try again". `block` is an `alert`; `banner` is a polite `status` with "Retrying…" (disabled) while `isFetching`. `retry` is `refetch({ cancelRefetch: false })`, so repeated presses join the running request.
+- **Error wording lives only in [`errorLabel.ts`](src/features/forecast/errorLabel.ts)**: `network` or the device offline (`useOnline()`) → "You’re offline", `timeout` → "The forecast is taking too long", `http` ≥ 500 → "The forecast service is having trouble", anything else → "We couldn’t load the forecast". Extend it there (4.2 offline work included); never write error copy in a component.
+- **Skeletons** (`DayStripSkeleton`, `VerdictCardSkeleton`, `RainChartSkeleton`, `OtherDaysSkeleton`, composed by `HomeSkeleton`) copy their section's frame and use the section's font tokens with a non-breaking space (`BONE` in `skeleton.ts`). If you change a section's padding, gap, type or fixed height, change its skeleton too: `e2e/home-states.spec.ts` compares every `[data-section]` box before and after the forecast arrives, for every recorded fixture at 393 and 430 px in both themes.
+- **The place name stays a silent fallback**: no error state for BigDataCloud.
+- **Tests**: `getHomeViewState` and `errorLabel` are table-driven; page tests cover each cause, retry, the banner and the previous-location case. In e2e, `holdForecast(page)` (in `e2e/support.ts`) holds Open-Meteo until `release(response)` or `fail()`.
+
+<!-- /owner: 4.1 -->
 
 <!-- owner: 1.5 -->
 

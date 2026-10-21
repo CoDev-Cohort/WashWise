@@ -16,7 +16,7 @@ interface RainChartProps {
 /** Hourly rain-chance bars with a text alternative that lists every hour (FR-005, FR-006). */
 export function RainChart({ bars }: RainChartProps) {
   return (
-    <section aria-labelledby="rain-chart-title" className="flex flex-col gap-3">
+    <section data-section="rain" aria-labelledby="rain-chart-title" className="flex flex-col gap-3">
       <h2 id="rain-chart-title" className="font-section text-section text-ink-section uppercase">
         Rain chance
       </h2>

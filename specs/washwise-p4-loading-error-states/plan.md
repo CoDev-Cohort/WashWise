@@ -1,7 +1,7 @@
 # Implementation Plan: WashWise P4 · Loading Skeletons and Error/Retry States
 
 **Date**: 2026-10-21
-**Spec**: `specs/spec.md` (moves to `specs/washwise-p4-loading-error-states/` at `execute`)
+**Spec**: `specs/washwise-p4-loading-error-states/spec.md`
 **Status**: Draft
 
 ## Summary
