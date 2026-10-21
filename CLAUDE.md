@@ -129,7 +129,7 @@ main.tsx
 
   To test it, render a component that throws inside `AppErrorBoundary`, or inside a memory router whose layout has `errorElement: <RouteErrorFallback />`. Silence the expected `console.error` with `vi.spyOn`.
 
-- **Deep links**: `vercel.json` rewrites every path to `index.html` so `/home` works on reload. `vite preview` already does this locally.
+- **Deep links**: `netlify.toml` rewrites every path to `index.html` so `/home` works on reload (missing `/assets/*` files are real 404s). `vite preview` already does the rewrite locally. Hosting: [INFRASTRUCTURE.md](INFRASTRUCTURE.md#hosting--deploy).
 
 <!-- /owner: 1.3 -->
 

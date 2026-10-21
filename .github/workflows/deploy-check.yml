@@ -1,0 +1,34 @@
+# Checks every successful Netlify deploy (P4.5, COH-33): HTTPS, deep links, update-safe caching,
+# security headers, noindex on previews. Not a required check: it runs after the deploy, so the
+# answer to a failure on production is a rollback (INFRASTRUCTURE.md › Hosting & deploy).
+#
+# Assumes Netlify's GitHub integration reports deploys as GitHub Deployments. If no run appears after
+# a preview is ready, switch the trigger to `status` events from `netlify/*` contexts and read the
+# address from `target_url` (plan R1).
+name: Deploy check
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+  deployments: read
+
+jobs:
+  check:
+    if: github.event.deployment_status.state == 'success' && startsWith(github.event.deployment.creator.login, 'netlify')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check the deployed address
+        env:
+          URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+          KIND: ${{ github.event.deployment.environment == 'Production' && '--production' || '--preview' }}
+        run: pnpm deploy:check "$URL" "$KIND"

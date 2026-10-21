@@ -21,6 +21,7 @@
     "docs:check": "tsx scripts/check-docs.ts",
     "fixtures:record": "tsx scripts/record-fixtures.ts",
     "verdict:report": "tsx scripts/verdict-report.ts",
+    "deploy:check": "tsx scripts/check-deploy.ts",
     "pwa:assets": "pwa-assets-generator"
   },
   "dependencies": {
@@ -60,6 +61,7 @@
     "msw": "^3.0.3",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "smol-toml": "^1.9.1",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",

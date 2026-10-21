@@ -182,7 +182,7 @@ Two separate pieces make WashWise work offline: the **service worker** keeps the
 | Runtime caching | None                                                                                                   |
 | Updates         | `registerType: 'prompt'`: a new version waits until the user taps **Reload** in the update toast       |
 | Update checks   | On launch (browser), hourly while open, and when the app returns to the foreground (`useAppUpdate.ts`) |
-| HTTP caching    | `vercel.json` serves `sw.js`, `index.html` and the manifest with `Cache-Control: no-cache`             |
+| HTTP caching    | `netlify.toml` serves `sw.js`, `index.html` and the manifest with `Cache-Control: no-cache`            |
 
 A dismissed toast comes back on the next check. When every WashWise tab or window is closed, the next launch opens the new version without asking.
 
@@ -212,7 +212,29 @@ A dismissed toast comes back on the next check. When every WashWise tab or windo
 
 ## Hosting & deploy
 
-> TODO (task P4)
+<!-- owner: 4.5 -->
+
+WashWise is a static site on **Netlify**, configured in [`netlify.toml`](netlify.toml) and guarded by [`scripts/netlify-config.test.ts`](scripts/netlify-config.test.ts). HTTPS is required: browsers only allow location on secure pages.
+
+| Branch / event                 | Netlify context | Address                                                            |
+| ------------------------------ | --------------- | ------------------------------------------------------------------ |
+| `main`                         | production      | `https://<site>.netlify.app` (set when the site is created)        |
+| `dev`                          | branch deploy   | `https://dev--<site>.netlify.app` (staging)                        |
+| Pull request to `dev` / `main` | deploy preview  | `https://deploy-preview-<n>--<site>.netlify.app`, posted on the PR |
+
+- **Gate**: nothing is checked by Netlify itself. The [CI checks](#ci-checks) are required before merging into `dev` and `main`, so only checked code reaches staging or production. A failed Netlify build leaves the previous deploy live.
+- **Build**: `corepack enable && pnpm build` with `NODE_VERSION = 24`, so the build matches CI (pnpm comes from `packageManager`). If the build image's install step ever fails on pnpm, set `PNPM_FLAGS = "--frozen-lockfile"` or install in the command (`corepack enable && pnpm install --frozen-lockfile && pnpm build`).
+- **Redirects**: every path serves `index.html` (deep links, unknown paths), except a **missing `/assets/*` file, which is a real 404** (`public/404.html`). Otherwise a page from the previous release asking for a removed script would get HTML and break mid-update.
+- **Caching**: `index.html`, `/`, `sw.js` and `manifest.webmanifest` are `no-cache`, so updates and the [update toast](#offline--updates) reach users; `/assets/*` (fingerprinted) is `immutable`.
+- **Security headers** on every address: HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=()`. No CSP yet (it would need the inline theme script hashed).
+- **Previews and staging** are `noindex` (Netlify adds `X-Robots-Tag`) and are separate sites to the browser: saved location, theme and forecasts don't carry over from production, so testers allow location on each.
+- **Deploy check**: [`deploy-check.yml`](.github/workflows/deploy-check.yml) runs `pnpm deploy:check <url> --preview|--production` after every successful Netlify deploy (HTTPS redirect, deep links, the asset 404, caching, headers, noindex). Run it by hand on any address. It isn't a required check.
+
+**Rollback** (under 5 minutes, no code change): Netlify → the site → **Deploys** → open the last good production deploy → **Publish deploy**. Use **Lock publishing** if you need to stop `main` from auto-publishing while you fix. Then fix forward with a normal PR. A rollback doesn't reach users whose service worker cached the broken release until their next update check; if the worker itself is broken, use the [offline kill switch](#offline--updates).
+
+**Access**: the Netlify team for the site is managed in Netlify (Team settings → Members). Keep at least two maintainers so a rollback never waits on one person. Current maintainers: _to be filled in when the site is created (COH-33 manual step)_.
+
+<!-- /owner: 4.5 -->
 
 ## CI checks
 

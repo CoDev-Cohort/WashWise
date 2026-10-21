@@ -30,12 +30,12 @@ Red-team mitigations from the plan are built in:
 
 ## Phase 1: Setup (blocks everything)
 
-- [ ] T001 [P] [COH-33] Add `smol-toml` as a dev dependency (`pnpm add -D`) and the script `"deploy:check": "tsx scripts/check-deploy.ts"` — package.json, pnpm-lock.yaml
-- [ ] T002 [P] [COH-33] Add a tiny static 404 page using the token colors inline (no JS, no external requests) — public/404.html
+- [x] T001 [P] [COH-33] Add `smol-toml` as a dev dependency (`pnpm add -D`) and the script `"deploy:check": "tsx scripts/check-deploy.ts"` — package.json, pnpm-lock.yaml
+- [x] T002 [P] [COH-33] Add a tiny static 404 page using the token colors inline (no JS, no external requests) — public/404.html
 
 ## Phase 2: Foundational (blocking prerequisites)
 
-- [ ] T003 [COH-33] Write the Netlify config:
+- [x] T003 [COH-33] Write the Netlify config:
   - `[build]`: `command = "corepack enable && pnpm build"`, `publish = "dist"`;
   - `[build.environment]`: `NODE_VERSION = "24"`, `COREPACK_ENABLE_STRICT = "0"` (R2);
   - redirects, in this order: `/assets/*` → `/404.html` status 404 (R3), then `/*` → `/index.html` status 200 (not forced);
@@ -46,7 +46,7 @@ Red-team mitigations from the plan are built in:
 
   Comment each block with its spec requirement — netlify.toml
 
-- [ ] T004 [COH-33] Config guard test. Parse `netlify.toml` and assert:
+- [x] T004 [COH-33] Config guard test. Parse `netlify.toml` and assert:
   - the build command runs `pnpm build` and the publish dir is `dist` (matches `vite.config.ts`);
   - the SPA fallback is present and not forced;
   - the `/assets/*` 404 rule comes before it (R3);
@@ -55,8 +55,8 @@ Red-team mitigations from the plan are built in:
 
   Depends on T001, T003 — scripts/netlify-config.test.ts
 
-- [ ] T005 [COH-33] Remove the old host config (FR-010) — vercel.json
-- [ ] T006 [COH-33] Add `pnpm deploy:check <url> [--preview|--production]`, with plain `fetch` and a readable list of failures. It checks:
+- [x] T005 [COH-33] Remove the old host config (FR-010) — vercel.json
+- [x] T006 [COH-33] Add `pnpm deploy:check <url> [--preview|--production]`, with plain `fetch` and a readable list of failures. It checks:
   1. HTTPS, and the `http://` form redirects to it;
   2. `/`, `/home` and `/no-such-page` return 200 HTML with `<div id="root">`;
   3. no-cache on `/sw.js`, `/index.html` and `/manifest.webmanifest`, and `immutable` on one `/assets/*.js` from the HTML;
@@ -66,15 +66,15 @@ Red-team mitigations from the plan are built in:
 
   Exit 1 on any failure — scripts/check-deploy.ts
 
-- [ ] T007 [COH-33] Unit tests with a stubbed `fetch`: a fully correct site passes; each check fails on its own broken response (missing header, deep link 404, asset fallback 200, `http` not redirecting, wrong noindex for the context). Depends on T006 — scripts/check-deploy.test.ts
+- [x] T007 [COH-33] Unit tests with a stubbed `fetch`: a fully correct site passes; each check fails on its own broken response (missing header, deep link 404, asset fallback 200, `http` not redirecting, wrong noindex for the context). Depends on T006 — scripts/check-deploy.test.ts
 
 ## Phase 3: US1 — WashWise at a public HTTPS address (P1) [COH-33]
 
-- [ ] T008 [US1] [COH-33] Build locally (`pnpm build`) and confirm `dist/` holds `index.html`, `sw.js`, `manifest.webmanifest`, `404.html` and `assets/`, so every path the config names exists. Note any extra root files the service worker needs in the no-cache list — dist/ (not committed)
+- [x] T008 [US1] [COH-33] Build locally (`pnpm build`) and confirm `dist/` holds `index.html`, `sw.js`, `manifest.webmanifest`, `404.html` and `assets/`, so every path the config names exists. Note any extra root files the service worker needs in the no-cache list — dist/ (not committed)
 
 ## Phase 4: US2 — Preview address for every pull request (P1) [COH-33]
 
-- [ ] T009 [US2] [COH-33] Add a workflow on `deployment_status`:
+- [x] T009 [US2] [COH-33] Add a workflow on `deployment_status`:
   - runs when `state == 'success'` and the creator is Netlify;
   - checkout, pnpm, Node 24, then `pnpm deploy:check "$URL"` with `--production` when `deployment.environment == 'Production'`, else `--preview`;
   - `permissions: contents: read, deployments: read`; not a required check.
@@ -83,11 +83,11 @@ Red-team mitigations from the plan are built in:
 
 ## Phase 5: US3 — Nothing unchecked reaches production (P1) [COH-33]
 
-- [ ] T010 [P] [US3] [COH-33] Write the rollback procedure (Deploys → last good deploy → "Publish deploy"; optionally "Lock publishing") and link it to the 4.2 offline kill switch. Goes into T011's block — INFRASTRUCTURE.md
+- [x] T010 [P] [US3] [COH-33] Write the rollback procedure (Deploys → last good deploy → "Publish deploy"; optionally "Lock publishing") and link it to the 4.2 offline kill switch. Goes into T011's block — INFRASTRUCTURE.md
 
 ## Phase 6: US4 — The team knows how deploys work (P2) [COH-33]
 
-- [ ] T011 [US4] [COH-33] INFRASTRUCTURE.md, the `## Hosting & deploy` placeholder: replace its TODO with a `<!-- owner: 4.5 -->` block covering:
+- [x] T011 [US4] [COH-33] INFRASTRUCTURE.md, the `## Hosting & deploy` placeholder: replace its TODO with a `<!-- owner: 4.5 -->` block covering:
   - the addresses table (production `main`, staging `dev`, previews per PR);
   - build settings (Node 24, pnpm via Corepack);
   - the redirects and why `/assets/*` misses are 404s;
@@ -99,8 +99,8 @@ Red-team mitigations from the plan are built in:
 
   In the 4.2 block, change the "HTTP caching" row from `vercel.json` to `netlify.toml` — INFRASTRUCTURE.md
 
-- [ ] T012 [P] [US4] [COH-33] Change the "Deep links" line from `vercel.json` to `netlify.toml` — CLAUDE.md
-- [ ] T013 [P] [US4] [COH-33] Add a "Live" line with the production URL and a Netlify status badge (placeholder until T014 gives the site name), and add `pnpm deploy:check` to the scripts table — README.md
+- [x] T012 [P] [US4] [COH-33] Change the "Deep links" line from `vercel.json` to `netlify.toml` — CLAUDE.md
+- [x] T013 [P] [US4] [COH-33] (Badge left out until the site exists: a Netlify badge needs the site ID; the Live line points to INFRASTRUCTURE.md.) Add a "Live" line with the production URL and a Netlify status badge (placeholder until T014 gives the site name), and add `pnpm deploy:check` to the scripts table — README.md
 
 ## Manual steps (people with access)
 
@@ -112,4 +112,4 @@ Red-team mitigations from the plan are built in:
 
 ## Final Phase: Verification
 
-- [ ] T019 [COH-33] Run `pnpm lint && pnpm typecheck && pnpm format:check && pnpm test && pnpm build && pnpm docs:check --done 4.5` locally and confirm CI is green on PR #4. No golden snapshot diff is expected — package.json scripts, GitHub
+- [x] T019 [COH-33] Run `pnpm lint && pnpm typecheck && pnpm format:check && pnpm test && pnpm build && pnpm docs:check --done 4.5` locally and confirm CI is green on PR #4. No golden snapshot diff is expected — package.json scripts, GitHub

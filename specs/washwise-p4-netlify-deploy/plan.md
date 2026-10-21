@@ -149,6 +149,12 @@ The spec has no open `[NEEDS CLARIFICATION]` items. Planning decisions:
 - **No CSP yet**: it is out of the spec's FR-013 list; it would need the inline script hashed and the two API origins listed. It can be a follow-up.
 - **`deploy-check` is not required**: it runs after a deploy, so it can't block one.
 
+## Implementation notes
+
+- `registerSW.js` is not emitted (`injectRegister: false`; the app registers from React), so its no-cache rule was dropped.
+- `deploy:check` against `vite preview` confirms the R3 problem is real: locally a missing asset answers 200 with the app page. On Netlify the `/assets/*` 404 rule prevents it.
+- The README links to INFRASTRUCTURE.md for the live addresses. The Netlify status badge needs the site ID, so it is added when the site exists (manual step).
+
 ## Known Risks
 
 | Risk                                                                   | Status                                                                                         |
