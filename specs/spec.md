@@ -22,7 +22,7 @@ A returning user opens WashWise with no connection (airplane mode, poor signal).
 2. **Given** the app is offline with a cached forecast, **When** the home page renders, **Then** verdicts are computed from the cached forecast against the current time (so "Today" is the real today, not the day the forecast was fetched), and days already past are left out.
 3. **Given** the cached forecast no longer covers today, **When** the app opens offline, **Then** the error state with "Try again" is shown instead.
 4. **Given** the user has never received a forecast, **When** they open the app offline, **Then** the app shell still loads and the home page shows the existing error state with "Try again", not a browser error page.
-5. **Given** the app is online, **When** a forecast is requested, **Then** the last cached forecast is shown straight away and a fresh one is fetched in the background and replaces it when it arrives (stale-while-revalidate).
+5. **Given** the app is online, **When** a forecast is requested, **Then** the last cached forecast is shown straight away and, if it is older than 30 minutes, a fresh one is fetched in the background and replaces it when it arrives (stale-while-revalidate).
 6. **Given** the connection comes back while the app is open, **When** the app notices, **Then** it fetches a fresh forecast without the user doing anything, and the page updates in place.
 
 ### Story 2 — Know how old the forecast is (Priority: P1)
@@ -36,12 +36,12 @@ When the device is offline, or the latest forecast refresh failed, a banner tell
 1. **Given** the app is offline and showing a cached forecast, **When** the home page renders, **Then** a banner shows "Updated X ago", where X is the time since that forecast was received.
 2. **Given** the banner is visible, **When** time passes, **Then** X updates (at least once a minute) without a reload.
 3. **Given** a fresh forecast arrives, **When** the page updates, **Then** the banner disappears.
-4. **Given** the banner, **When** it is read by assistive technology, **Then** its text is announced once when it appears, not on every update.
+4. **Given** the banner, **When** it is read by assistive technology, **Then** its message is announced once when it appears; the age line stays readable but is not re-announced as it updates.
 5. **Given** the banner, **When** it renders in light or dark, **Then** it uses existing design tokens and is legible.
 
 ### Story 3 — Get told when a new version is ready (Priority: P1)
 
-After the team ships a new version, a user who has the app open sees a small toast: "A new version is available" with a "Reload" action. Tapping it switches to the new version. Dismissing it keeps the current version until the next launch.
+After the team ships a new version, a user who has the app open sees a small toast: "A new version is available" with a "Reload" action. Tapping it switches to the new version. Dismissing it keeps the current version while the app stays open; the toast comes back on the next check, and once every WashWise tab or window is closed the next launch opens the new version.
 
 **Why this priority**: Once the app works offline, an old copy can stay in use indefinitely. The toast is how fixes reach users, and it is an explicit acceptance criterion.
 
@@ -84,7 +84,7 @@ On a browser that supports installing web apps, a user who has not installed Was
 
 - **FR-001**: System MUST load the app shell (all pages, styles, fonts and icons the app needs) with no network after it has been opened online once.
 - **FR-002**: System MUST keep the last successful forecast response on the device across app restarts, and serve it when the network is unavailable.
-- **FR-003**: Forecast requests MUST follow stale-while-revalidate: show the cached forecast immediately when one exists, fetch a fresh one in the background, and replace the cached one when it arrives.
+- **FR-003**: Forecast requests MUST follow stale-while-revalidate: show the cached forecast immediately when one exists, fetch a fresh one in the background once the cached one is older than 30 minutes (the existing freshness window), and replace the cached one when it arrives.
 - **FR-004**: System MUST compute verdicts from a cached forecast against the current time, exactly as for a fresh one.
 - **FR-005**: System MUST show an "Updated X ago" banner while the device is offline or after a forecast refresh has failed, never merely while a background refresh is in flight. X is the time since the forecast on screen was received, worded "just now" (under 1 min), "N min ago", "N h ago" or "N days ago", and kept current at least once a minute.
 - **FR-006**: System MUST hide the banner as soon as a fresh forecast is shown.
@@ -113,7 +113,7 @@ On a browser that supports installing web apps, a user who has not installed Was
 
 ## Success Criteria
 
-- **SC-001**: After one online visit, the production build opens on the home page with the last forecast with the network disabled, on both e2e device profiles.
+- **SC-001**: After one online visit, the production build opens on the home page with the last forecast with the network disabled: automated on the Android (Chromium) e2e profile, and checked by hand on a real iPhone with a screenshot (the WebKit e2e browser has no service workers).
 - **SC-002**: Whenever a cached forecast is shown offline, the age banner is visible and its age is correct to the minute.
 - **SC-003**: After a new deployment, a user with the app open sees the update toast and is on the new version after one tap on "Reload".
 - **SC-004**: On a supporting browser, a user can install the app from the in-app prompt in two taps (Install, then confirm).
@@ -135,3 +135,10 @@ On a browser that supports installing web apps, a user who has not installed Was
 - CHK002 [Consistency] Banner shows only when offline or after a failed refresh, never while a refresh is in flight (FR-005).
 - CHK003 [Completeness] Update check timing: on launch, on return to foreground, at most hourly while open (FR-008).
 - CHK004 [Clarity] Install-prompt dismissal is remembered with no expiry (FR-010).
+
+### Plan analysis 2026-10-21
+
+- SC-001 limited to automated Chromium + manual iPhone check (WebKit e2e has no service workers).
+- A1: background refresh only once the cached forecast is older than 30 minutes (Story 1 criterion 5, FR-003).
+- A2: banner message announced once; age line readable, not re-announced (Story 2 criterion 4).
+- A3: dismissed update toast returns on the next check; a full close-and-reopen gets the new version (Story 3).
