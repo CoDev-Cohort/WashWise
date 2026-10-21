@@ -1,0 +1,22 @@
+# Flake check before merge (P4.4 FR-015, SC-005): add the `flake-check` label to a pull request to run
+# every e2e test 3 times. Separate from CI so labels never cancel or shadow the required checks.
+name: Flake check
+
+on:
+  pull_request:
+    branches: [dev, main]
+    types: [labeled]
+
+concurrency:
+  group: flake-check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  repeat:
+    if: github.event.label.name == 'flake-check'
+    uses: ./.github/workflows/e2e.yml
+    with:
+      repeat_each: 3

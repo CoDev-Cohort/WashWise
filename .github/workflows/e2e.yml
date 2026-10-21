@@ -1,0 +1,67 @@
+# Playwright on both phone profiles against the production build. Called by ci.yml (every PR/push)
+# and flake-check.yml (repeat runs); not triggered on its own.
+name: e2e
+
+on:
+  workflow_call:
+    inputs:
+      repeat_each:
+        description: Run every test this many times
+        type: number
+        default: 1
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: android-chrome
+            browser: chromium
+          - project: ios-safari
+            browser: webkit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache browsers
+        id: browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ steps.playwright.outputs.version }}-${{ matrix.browser }}
+      - name: Install browser
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+      - name: Install browser system dependencies
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps ${{ matrix.browser }}
+      - name: End-to-end tests
+        run: pnpm e2e --project=${{ matrix.project }} --repeat-each=${{ inputs.repeat_each }}
+      - name: Upload report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}${{ inputs.repeat_each > 1 && '-repeat' || '' }}
+          path: playwright-report/
+          retention-days: 14
+      - name: Upload traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.project }}${{ inputs.repeat_each > 1 && '-repeat' || '' }}
+          path: test-results/
+          retention-days: 14
